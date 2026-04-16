@@ -4,128 +4,300 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>La Takienta &mdash; Koutammakou</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=Inter:wght@300;400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <style>
-  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-  html, body { width:100%; height:100%; background:#000; overflow:hidden; }
-  canvas { display:block; }
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; background:#030201; overflow:hidden; }
+canvas { display:block; }
 
-  #boot {
-    position:fixed; inset:0; background:#000;
-    display:flex; align-items:center; justify-content:center;
-    z-index:200; transition:opacity 1.8s ease;
-  }
-  #boot-particle {
-    width:4px; height:4px; border-radius:50%;
-    background:#c1440e; box-shadow:0 0 12px 4px #c1440e88;
-    animation:fall 2s ease-in infinite;
-  }
-  @keyframes fall { 0%{transform:translateY(-60px);opacity:0} 60%{opacity:1} 100%{transform:translateY(60px);opacity:0} }
+/* ---- TYPOGRAPHIE ---- */
+:root {
+  --gold: #f9d58b;
+  --gold-dim: rgba(249,213,139,0.55);
+  --gold-faint: rgba(249,213,139,0.18);
+  --purple: #55415d;
+  --ink: #030201;
+  --text: rgba(255,255,255,0.88);
+  --text-dim: rgba(255,255,255,0.42);
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Inter', sans-serif;
+}
 
-  #app { position:fixed; inset:0; }
+/* ---- GLOBE SCENE ---- */
+#globe-scene {
+  position:fixed; inset:0; z-index:1;
+  opacity:1; transition:opacity 1s ease;
+}
 
-  #narrative {
-    position:fixed; inset:0; pointer-events:none; z-index:10;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .n-text {
-    font-family:'Georgia',serif; color:#ffe4b5; text-align:center;
-    font-size:clamp(1rem,2.5vw,1.4rem); line-height:1.8;
-    max-width:640px; padding:0 24px;
-    opacity:0; transform:translateY(8px);
-    transition:opacity 1.4s ease, transform 1.4s ease;
-    text-shadow:0 2px 20px rgba(0,0,0,.9), 0 0 40px rgba(193,68,14,.3);
-  }
-  .n-text.show { opacity:1; transform:translateY(0); }
-  .n-text em { font-style:italic; color:#f4a460; }
+/* ---- UI GLOBE ---- */
+#ui-top {
+  position:fixed; top:36px; left:50%; transform:translateX(-50%);
+  text-align:center; z-index:20; pointer-events:none;
+  transition:opacity 0.8s ease;
+}
+#ui-top h1 {
+  font-family:var(--sans); font-size:1.35rem; font-weight:500;
+  text-transform:uppercase; letter-spacing:0.5em;
+  color:var(--gold); margin:0 0 6px;
+  text-shadow:0 0 28px rgba(249,213,139,0.4);
+}
+#ui-top .subtitle {
+  font-family:var(--mono); font-size:0.7rem; font-weight:300;
+  letter-spacing:0.22em; color:var(--gold-dim);
+  text-transform:uppercase;
+}
+#ui-top.fade { opacity:0; }
 
-  #locator {
-    position:fixed; top:24px; left:50%; transform:translateX(-50%);
-    color:#8b4513; font-family:Georgia,serif; font-size:.75rem;
-    letter-spacing:.2em; text-transform:uppercase;
-    opacity:0; transition:opacity 2s;
-    pointer-events:none;
-  }
+#ui-bottom {
+  position:fixed; bottom:52px; left:50%; transform:translateX(-50%);
+  z-index:20; transition:opacity 0.8s ease;
+}
+#ui-bottom.fade { opacity:0; pointer-events:none; }
 
-  .ann {
-    font-family:Georgia,serif; font-size:.78rem;
-    color:#ffe4b5; pointer-events:all; cursor:pointer;
-    border-left:2px solid #c1440e; padding:4px 10px;
-    background:rgba(10,5,0,.75); backdrop-filter:blur(6px);
-    opacity:0; transition:opacity .8s;
-    max-width:220px; white-space:normal; line-height:1.4;
-  }
-  .ann.show { opacity:1; }
-  .ann:hover { color:#f4a460; border-color:#f4a460; }
+#enter-btn {
+  padding:13px 42px;
+  background:rgba(85,65,93,0.7);
+  border:1.5px solid rgba(249,213,139,0.75);
+  color:var(--gold); cursor:pointer;
+  font-family:var(--sans); font-weight:500;
+  text-transform:uppercase; letter-spacing:4px; font-size:0.72rem;
+  clip-path:polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+  backdrop-filter:blur(14px);
+  box-shadow:0 0 20px rgba(249,213,139,0.08), inset 0 1px 0 rgba(255,255,255,0.06);
+  transition:all 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+#enter-btn:hover {
+  background:var(--gold); color:var(--purple);
+  letter-spacing:6px; transform:scale(1.04);
+  box-shadow:0 0 30px rgba(249,213,139,0.3);
+}
+#enter-btn:active { transform:scale(0.98); }
 
-  #detail {
-    position:fixed; bottom:0; left:0; right:0; z-index:20;
-    background:linear-gradient(0deg,rgba(5,2,0,.97) 0%,rgba(5,2,0,.8) 70%,transparent);
-    padding:36px 28px 28px; color:#ffe4b5;
-    font-family:Georgia,serif;
-    transform:translateY(100%); transition:transform .55s cubic-bezier(.4,0,.2,1);
-  }
-  #detail.open { transform:translateY(0); }
-  #detail h3 { font-size:1.15rem; margin-bottom:10px; color:#f4a460; letter-spacing:.05em; }
-  #detail p  { font-size:.88rem; line-height:1.75; color:#d2b48c; max-width:600px; }
-  #detail-close {
-    position:absolute; top:14px; right:18px;
-    background:none; border:1px solid #5a3010; color:#ffe4b5;
-    width:30px; height:30px; border-radius:50%; cursor:pointer;
-    font-size:.85rem; display:flex; align-items:center; justify-content:center;
-  }
+/* ---- PORTAL ---- */
+#portal {
+  position:fixed; inset:0; z-index:100;
+  background:radial-gradient(ellipse 80% 60% at 50% 38%,
+    rgba(85,65,93,0.5) 0%, transparent 70%),
+    radial-gradient(at center, #0d0810 0%, var(--ink) 100%);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.6s ease;
+}
+#portal.active { opacity:1; pointer-events:all; }
 
-  #ctrl {
-    position:fixed; bottom:28px; right:20px;
-    display:flex; flex-direction:column; gap:10px; z-index:15;
-  }
-  .cb {
-    width:44px; height:44px; border-radius:50%; border:none; cursor:pointer;
-    background:rgba(193,68,14,.8); color:#ffe8cc;
-    font-size:1.1rem; display:flex; align-items:center; justify-content:center;
-    backdrop-filter:blur(6px); box-shadow:0 4px 16px rgba(193,68,14,.35);
-    transition:transform .2s, background .2s; opacity:0; pointer-events:none;
-  }
-  .cb.ready { opacity:1; pointer-events:all; }
-  .cb:hover { transform:scale(1.1); background:rgba(244,164,96,.85); }
+.dna-wrap {
+  width:60px; height:112px; position:relative; margin-bottom:36px;
+}
+.dna-dot {
+  position:absolute; width:8px; height:8px;
+  background:var(--gold); border-radius:50%; left:26px;
+  animation:dna-swing 2s ease-in-out infinite;
+  box-shadow:0 0 10px rgba(249,213,139,0.5);
+}
+@keyframes dna-swing {
+  0%,100% { transform:translateX(-22px) scale(0.5); opacity:0.2; background:var(--purple); }
+  50%     { transform:translateX(22px)  scale(1);   opacity:1;   background:var(--gold); }
+}
 
-  #badge {
-    position:fixed; top:20px; left:20px; z-index:15;
-    background:rgba(5,2,0,.82); border:1px solid #5a3010; border-radius:6px;
-    padding:7px 14px; color:#f4a460; font-family:Georgia,serif;
-    font-size:.7rem; letter-spacing:.12em; text-transform:uppercase;
-    opacity:0; transition:opacity 1.5s; pointer-events:none;
-    backdrop-filter:blur(6px);
-  }
+.portal-divider {
+  width:60px; height:1px; margin-bottom:26px;
+  background:linear-gradient(90deg,transparent,rgba(85,65,93,0.8),rgba(249,213,139,0.45),rgba(85,65,93,0.8),transparent);
+}
 
-  #cursor {
-    position:fixed; width:8px; height:8px; border-radius:50%;
-    background:#c1440e; box-shadow:0 0 10px 3px #c1440e88;
-    pointer-events:none; z-index:999; transform:translate(-50%,-50%);
-    transition:width .15s, height .15s, opacity .3s; opacity:0;
-  }
-  body:hover #cursor { opacity:1; }
+.portal-text {
+  font-family:var(--mono); font-size:12px;
+  color:rgba(249,213,139,0.7); letter-spacing:2px;
+  text-align:center; line-height:2;
+}
+.portal-text .finale {
+  color:var(--gold); font-size:16px; letter-spacing:3px;
+  text-shadow:0 0 18px rgba(249,213,139,0.5);
+}
+
+/* ---- LANDSCAPE SCENE ---- */
+#landscape {
+  position:fixed; inset:0; z-index:5;
+  display:none; opacity:0; transition:opacity 1.5s ease;
+}
+
+/* ---- TEXTE NARRATIF ---- */
+#narrative {
+  position:fixed; inset:0; z-index:15;
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:none; opacity:0; transition:opacity 0.5s;
+}
+#narrative.show { opacity:1; }
+.n-text {
+  font-family:'Georgia',serif; color:#ffe4b5; text-align:center;
+  font-size:clamp(1rem,2.2vw,1.35rem); line-height:1.85;
+  max-width:580px; padding:0 28px;
+  opacity:0; transform:translateY(10px);
+  transition:opacity 1.4s ease, transform 1.4s ease;
+  text-shadow:0 2px 24px rgba(0,0,0,0.95), 0 0 50px rgba(193,68,14,0.25);
+}
+.n-text.show { opacity:1; transform:translateY(0); }
+.n-text em { font-style:italic; color:#f4a460; }
+
+/* ---- BADGE ---- */
+#badge {
+  position:fixed; top:22px; left:22px; z-index:30;
+  background:rgba(3,2,1,0.8); border:1px solid var(--gold-faint); border-radius:4px;
+  padding:6px 14px; font-family:var(--mono); font-size:0.65rem;
+  color:var(--gold-dim); letter-spacing:0.14em; text-transform:uppercase;
+  opacity:0; transition:opacity 1.5s; pointer-events:none;
+  backdrop-filter:blur(8px);
+}
+
+/* ---- ANNOTATIONS ---- */
+@keyframes ann-reveal {
+  from { opacity:0; transform:translateY(8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.ann-wrap {
+  opacity:0;
+  animation:ann-reveal 0.65s cubic-bezier(0.22,1,0.36,1) forwards;
+  pointer-events:none;
+}
+.ann-dot {
+  width:9px; height:9px;
+  border:1.5px solid rgba(255,255,255,0.75); background:transparent;
+  transform:rotate(45deg); flex-shrink:0; pointer-events:none;
+}
+.ann-card {
+  pointer-events:auto; cursor:pointer;
+  display:flex; flex-direction:column;
+  white-space:nowrap; user-select:none;
+}
+.ann-idx {
+  font-family:var(--mono); font-size:9px; letter-spacing:0.15em;
+  color:var(--gold); text-shadow:0 0 12px rgba(249,213,139,0.35);
+  margin-bottom:4px; transition:text-shadow 0.25s;
+}
+.ann-card:hover .ann-idx { text-shadow:0 0 18px rgba(249,213,139,0.75); }
+.ann-title {
+  font-family:var(--sans); font-size:14px; font-weight:400;
+  color:rgba(255,255,255,0.9); letter-spacing:0.03em; line-height:1;
+  text-shadow:0 1px 12px rgba(0,0,0,0.99);
+  transition:color 0.25s;
+}
+.ann-card:hover .ann-title { color:var(--gold); }
+.ann-divider {
+  height:1px; background:rgba(255,255,255,0.32);
+  margin:6px 0 5px; min-width:90px;
+  transition:background 0.25s;
+}
+.ann-card:hover .ann-divider { background:rgba(249,213,139,0.6); }
+.ann-sub {
+  font-family:var(--mono); font-size:8px; font-weight:300;
+  letter-spacing:0.12em; color:var(--text-dim);
+  text-transform:uppercase; transition:color 0.25s;
+}
+.ann-card:hover .ann-sub { color:rgba(249,213,139,0.5); }
+
+/* ---- INFO CARD ---- */
+#info-card {
+  position:fixed; bottom:28px; left:28px; width:300px;
+  background:rgba(22,12,30,0.9); border:1px solid var(--gold-faint);
+  border-left:2px solid var(--gold); padding:22px 22px 18px;
+  z-index:50; opacity:0; visibility:hidden;
+  transform:translateX(-16px);
+  transition:all 0.45s cubic-bezier(0.2,0.8,0.2,1);
+  backdrop-filter:blur(24px);
+  box-shadow:0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(85,65,93,0.35);
+}
+#info-card.active { opacity:1; visibility:visible; transform:translateX(0); }
+#info-card .card-tag {
+  font-family:var(--mono); font-size:8.5px; letter-spacing:2.5px;
+  color:var(--gold-dim); text-transform:uppercase; margin:0 0 10px;
+}
+#info-card h3 {
+  font-family:var(--sans); color:var(--gold); margin:0 0 13px;
+  font-size:1rem; font-weight:500; letter-spacing:1px;
+  text-transform:uppercase; padding-bottom:10px;
+  border-bottom:1px solid var(--gold-faint);
+}
+#info-card p {
+  font-family:var(--sans); font-size:0.82rem; line-height:1.72;
+  color:rgba(255,255,255,0.72); font-weight:300; margin:0;
+}
+#info-close {
+  display:inline-flex; align-items:center; gap:6px; margin-top:16px;
+  color:var(--text-dim); cursor:pointer; font-size:0.67rem;
+  font-weight:500; text-transform:uppercase; letter-spacing:2px;
+  font-family:var(--mono); border:none; background:none; padding:0;
+  transition:color 0.25s;
+}
+#info-close:hover { color:var(--gold); }
+#info-close::before { content:'&#8592;'; font-size:0.9rem; }
+
+/* ---- NAV HINT ---- */
+#nav-hint {
+  position:fixed; bottom:22px; right:22px;
+  font-family:var(--mono); font-size:9px; letter-spacing:1px;
+  color:rgba(249,213,139,0.3); z-index:30;
+  opacity:0; transition:opacity 1.5s; pointer-events:none;
+}
+#nav-hint.show { opacity:1; }
+
+/* ---- RETOUR BTN ---- */
+#back-btn {
+  position:fixed; bottom:52px; left:50%; transform:translateX(-50%);
+  z-index:30; opacity:0; pointer-events:none; transition:opacity 0.8s;
+}
+#back-btn.show { opacity:1; pointer-events:all; }
+#back-btn button {
+  padding:11px 36px;
+  background:rgba(85,65,93,0.6);
+  border:1px solid rgba(249,213,139,0.5);
+  color:rgba(249,213,139,0.75); cursor:pointer;
+  font-family:var(--mono); font-weight:300;
+  text-transform:uppercase; letter-spacing:3px; font-size:0.68rem;
+  backdrop-filter:blur(10px); transition:all 0.3s;
+}
+#back-btn button:hover { color:var(--gold); border-color:var(--gold); }
+
+/* ---- CURSEUR ---- */
+#cursor {
+  position:fixed; width:7px; height:7px; border-radius:50%;
+  background:#c1440e; box-shadow:0 0 9px 3px rgba(193,68,14,0.6);
+  pointer-events:none; z-index:9999; transform:translate(-50%,-50%);
+  transition:opacity 0.3s; opacity:0;
+}
 </style>
 </head>
 <body>
 
-<div id="boot"><div id="boot-particle"></div></div>
-<div id="app"></div>
-<div id="badge">Koutammakou &mdash; UNESCO 2004</div>
-<div id="locator">Koutammakou &bull; Nord-Est Togo</div>
+<div id="globe-scene"></div>
+<div id="ui-top">
+  <h1 id="globe-title">Afrique de l&rsquo;Ouest</h1>
+  <p class="subtitle" id="globe-sub">Exploration &middot; Patrimoine vivant</p>
+</div>
+<div id="ui-bottom">
+  <button id="enter-btn">Explorer le Togo</button>
+</div>
+
+<div id="portal">
+  <div class="dna-wrap" id="dna-wrap"></div>
+  <div class="portal-divider"></div>
+  <div class="portal-text" id="portal-text"></div>
+</div>
+
+<div id="landscape"></div>
 <div id="narrative"><p class="n-text" id="nt"></p></div>
+<div id="badge">Koutammakou &mdash; UNESCO 2004</div>
 
-<div id="detail">
-  <button id="detail-close" onclick="closeDetail()">&#215;</button>
-  <h3 id="d-title"></h3>
-  <p id="d-body"></p>
+<div id="info-card">
+  <p class="card-tag">Architecture Batammariba</p>
+  <h3 id="info-title"></h3>
+  <p id="info-body"></p>
+  <button id="info-close">Retour</button>
 </div>
 
-<div id="ctrl">
-  <button class="cb" id="btn-rot" title="Rotation auto">&#8635;</button>
-  <button class="cb" id="btn-reset" title="Vue initiale">&#8962;</button>
-  <button class="cb" id="btn-info" title="A propos">&#9432;</button>
-</div>
-
+<div id="nav-hint">Cliquer sur une annotation pour explorer</div>
+<div id="back-btn"><button id="back-to-globe">&#8592; Retour \u00e0 l\u2019espace</button></div>
 <div id="cursor"></div>
 
 <script type="importmap">
@@ -136,423 +308,745 @@
 </script>
 <script type="module">
 import * as THREE from 'three';
-import { OrbitControls }    from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader }       from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader }      from 'three/addons/loaders/DRACOLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader }    from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader }   from 'three/addons/loaders/DRACOLoader.js';
+import { SimplexNoise }  from 'three/addons/math/SimplexNoise.js';
+import { Sky }           from 'three/addons/objects/Sky.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-// -- CURSEUR PERSONNALISE --
+/* =====================================================
+   CURSEUR
+===================================================== */
 const cur = document.getElementById('cursor');
 document.addEventListener('mousemove', e => {
   cur.style.left = e.clientX + 'px';
   cur.style.top  = e.clientY + 'px';
+  cur.style.opacity = '1';
 });
 document.body.style.cursor = 'none';
 
-// -- SCENE --
-const W = innerWidth, H = innerHeight;
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(W, H);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.6;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-document.getElementById('app').appendChild(renderer.domElement);
-
-const labelRdr = new CSS2DRenderer();
-labelRdr.setSize(W, H);
-Object.assign(labelRdr.domElement.style, { position:'absolute', top:'0', pointerEvents:'none' });
-document.getElementById('app').appendChild(labelRdr.domElement);
-
-const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x1a0800, 0.006);
-scene.background = new THREE.Color(0x050200);
-
-const camera = new THREE.PerspectiveCamera(55, W/H, 0.1, 600);
-camera.position.set(12, 5, 16);
-
-// -- CONTROLES --
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.04;
-controls.minDistance  = 4;
-controls.maxDistance  = 35;
-controls.maxPolarAngle = Math.PI * 0.82;
-controls.target.set(0, 3, 0);
-controls.autoRotate = true;
-controls.autoRotateSpeed = 0.25;
-
-// -- CIEL NUIT AFRICAINE --
-const starGeo = new THREE.BufferGeometry();
-const starPos = new Float32Array(4000 * 3);
-for (let i = 0; i < 4000; i++) {
-  const r = 280;
-  const theta = Math.random() * Math.PI * 2;
-  const phi   = Math.acos(2 * Math.random() - 1);
-  starPos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
-  starPos[i*3+1] = r * Math.abs(Math.sin(phi));
-  starPos[i*3+2] = r * Math.sin(phi) * Math.sin(theta);
-}
-starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color:0xffeedd, size:0.35, transparent:true, opacity:.6 })));
-
-const skyGeo = new THREE.SphereGeometry(280, 32, 16);
-const skyMat = new THREE.ShaderMaterial({
-  side: THREE.BackSide,
-  uniforms: { uTime: { value:0 } },
-  vertexShader: `
-    varying vec3 vPos;
-    void main(){ vPos=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }
-  `,
-  fragmentShader: `
-    varying vec3 vPos;
-    void main(){
-      float h = normalize(vPos).y;
-      vec3 night  = vec3(0.01,0.005,0.0);
-      vec3 horizon= vec3(0.25,0.06,0.01);
-      vec3 col = mix(horizon, night, smoothstep(-0.05,0.35,h));
-      gl_FragColor = vec4(col,1.);
-    }
-  `
-});
-scene.add(new THREE.Mesh(skyGeo, skyMat));
-
-// -- LUMIERES --
-scene.add(new THREE.AmbientLight(0x1a0800, 0.35));
-
-const fireLight = new THREE.PointLight(0xff6b20, 3.0, 30);
-fireLight.position.set(0, 0.6, 3);
-fireLight.castShadow = true;
-fireLight.shadow.mapSize.set(1024, 1024);
-scene.add(fireLight);
-
-const rimLight = new THREE.DirectionalLight(0x3d1500, 0.4);
-rimLight.position.set(-8, 12, -6);
-scene.add(rimLight);
-
-// -- SOL --
-const groundGeo = new THREE.PlaneGeometry(80, 80, 40, 40);
-const gPos = groundGeo.attributes.position;
-for (let i = 0; i < gPos.count; i++) {
-  gPos.setZ(i, (Math.random()-0.5) * 0.18 + Math.sin(gPos.getX(i)*0.3)*0.08);
-}
-groundGeo.computeVertexNormals();
-const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color:0x6b3a10, roughness:1, metalness:0 }));
-ground.rotation.x = -Math.PI/2;
-ground.receiveShadow = true;
-scene.add(ground);
-
-const rockMat = new THREE.MeshStandardMaterial({ color:0x4a2d0d, roughness:0.95 });
-for (let i = 0; i < 18; i++) {
-  const r = 2 + Math.random() * 0.8;
-  const geo = new THREE.DodecahedronGeometry(r * (0.08 + Math.random()*0.15), 0);
-  const rock = new THREE.Mesh(geo, rockMat);
-  const angle = Math.random() * Math.PI * 2;
-  const dist  = 8 + Math.random() * 22;
-  rock.position.set(Math.cos(angle)*dist, 0, Math.sin(angle)*dist);
-  rock.rotation.set(Math.random()*2, Math.random()*2, Math.random()*2);
-  rock.castShadow = true;
-  scene.add(rock);
-}
-
-// -- PARTICULES --
-const dustCount = 800;
-const dustPos = new Float32Array(dustCount * 3);
-const dustVel = new Float32Array(dustCount * 3);
-for (let i = 0; i < dustCount; i++) {
-  dustPos[i*3]   = (Math.random()-0.5)*50;
-  dustPos[i*3+1] = Math.random()*12;
-  dustPos[i*3+2] = (Math.random()-0.5)*50;
-  dustVel[i*3]   = (Math.random()-0.5)*0.008;
-  dustVel[i*3+1] = (Math.random()-0.5)*0.003;
-  dustVel[i*3+2] = (Math.random()-0.5)*0.006;
-}
-const dustGeo = new THREE.BufferGeometry();
-dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({
-  color:0xc1440e, size:0.07, transparent:true, opacity:0.35, depthWrite:false
-}));
-scene.add(dust);
-
-const emberCount = 120;
-const emberPos = new Float32Array(emberCount * 3);
-const emberVel = new Float32Array(emberCount * 3);
-for (let i = 0; i < emberCount; i++) {
-  emberPos[i*3]   = (Math.random()-0.5)*1.5;
-  emberPos[i*3+1] = Math.random()*0.5;
-  emberPos[i*3+2] = 2.5 + (Math.random()-0.5)*1.5;
-  emberVel[i*3]   = (Math.random()-0.5)*0.02;
-  emberVel[i*3+1] = 0.015 + Math.random()*0.025;
-  emberVel[i*3+2] = (Math.random()-0.5)*0.01;
-}
-const emberGeo = new THREE.BufferGeometry();
-emberGeo.setAttribute('position', new THREE.BufferAttribute(emberPos, 3));
-const embers = new THREE.Points(emberGeo, new THREE.PointsMaterial({
-  color:0xff8c00, size:0.12, transparent:true, opacity:0.85, depthWrite:false
-}));
-scene.add(embers);
-
-// -- FEU DE CAMP --
-const logMat = new THREE.MeshStandardMaterial({ color:0x2a1005, roughness:1 });
-for (let i = 0; i < 4; i++) {
-  const log = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,0.9,6), logMat);
-  const a = (i/4)*Math.PI*2;
-  log.position.set(Math.cos(a)*0.4, 0, 2.5+Math.sin(a)*0.25);
-  log.rotation.z = Math.PI/2;
-  log.rotation.y = a;
-  scene.add(log);
-}
-
-// -- MODELE 3D --
-let mainTower = null;
-let annotationsCreated = false;
-
-const bancoMat = new THREE.MeshStandardMaterial({ color:0xb5601a, roughness:0.92, metalness:0 });
-const roofMat  = new THREE.MeshStandardMaterial({ color:0x7a6030, roughness:1.0,  metalness:0 });
-const doorMat  = new THREE.MeshStandardMaterial({ color:0x1a0800, roughness:0.8 });
-
-function buildPlaceholder() {
-  const g = new THREE.Group();
-  const mainGrp = new THREE.Group();
-
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(1.35,1.55,1.4,20), bancoMat);
-  base.position.y = 0.7; base.castShadow = true; base.receiveShadow = true; mainGrp.add(base);
-
-  const mid = new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.38,1.6,20), bancoMat);
-  mid.position.y = 2.2; mid.castShadow = true; mid.receiveShadow = true; mainGrp.add(mid);
-
-  const top = new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.28,1.2,20), bancoMat);
-  top.position.y = 3.7; top.castShadow = true; top.receiveShadow = true; mainGrp.add(top);
-
-  const terr = new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.05,0.25,20), bancoMat);
-  terr.position.y = 4.42; terr.castShadow = true; mainGrp.add(terr);
-
-  const roof = new THREE.Mesh(new THREE.ConeGeometry(1.55,2.2,20), roofMat);
-  roof.position.y = 5.65; roof.castShadow = true; mainGrp.add(roof);
-
-  const door = new THREE.Mesh(new THREE.BoxGeometry(0.38,0.68,0.12), doorMat);
-  door.position.set(0,0.34,1.35); mainGrp.add(door);
-
-  const win = new THREE.Mesh(new THREE.BoxGeometry(0.18,0.18,0.12), doorMat);
-  win.position.set(1.3,2.5,0); mainGrp.add(win);
-
-  mainTower = mainGrp;
-  g.add(mainGrp);
-
-  [
-    { x:-4.5, z:-2,   scale:0.72, h:3.8 },
-    { x: 4.2, z:-2.5, scale:0.65, h:3.4 },
-    { x: 1.5, z:-5,   scale:0.5,  h:2.8 },
-  ].forEach(d => {
-    const sg = new THREE.Group();
-    const sw = new THREE.Mesh(new THREE.CylinderGeometry(d.scale,d.scale*1.1,d.h,16), bancoMat);
-    sw.position.y = d.h/2; sw.castShadow = true; sg.add(sw);
-    const sr = new THREE.Mesh(new THREE.ConeGeometry(d.scale*1.15,d.h*0.4,16), roofMat);
-    sr.position.y = d.h*1.18; sr.castShadow = true; sg.add(sr);
-    sg.position.set(d.x,0,d.z); g.add(sg);
-  });
-
-  [[-4.5,0,-2],[4.2,0,-2.5]].forEach(p => {
-    const fl = new THREE.PointLight(0xff5500, 1.2, 8);
-    fl.position.set(p[0]+0.5, 0.5, p[2]+0.8); scene.add(fl);
-  });
-
-  scene.add(g);
-  return g;
-}
-
-const dracoLdr = new DRACOLoader();
-dracoLdr.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-const gltfLdr = new GLTFLoader();
-gltfLdr.setDRACOLoader(dracoLdr);
-
-gltfLdr.load('./assets/la-takienta.glb',
-  gltf => {
-    const m = gltf.scene;
-    const box = new THREE.Box3().setFromObject(m);
-    const s = 5.5 / Math.max(...box.getSize(new THREE.Vector3()).toArray());
-    m.scale.setScalar(s);
-    const c = box.getCenter(new THREE.Vector3());
-    m.position.set(-c.x*s, -box.min.y*s, -c.z*s);
-    m.traverse(ch => { if(ch.isMesh){ ch.castShadow=true; ch.receiveShadow=true; } });
-    mainTower = m; scene.add(m); finishLoading();
-  },
-  null,
-  () => { buildPlaceholder(); finishLoading(); }
-);
-
-// -- SEQUENCE NARRATIVE --
-const nt = document.getElementById('nt');
-function showText(html, duration) {
-  return new Promise(resolve => {
-    nt.innerHTML = html;
-    nt.classList.add('show');
-    setTimeout(() => {
-      nt.classList.remove('show');
-      setTimeout(resolve, 1400);
-    }, duration);
-  });
-}
-
-async function runNarrative() {
-  await delay(800);
-  await showText("Ils appelaient cet endroit <em>Koutammakou</em>.", 3200);
-  await delay(400);
-  await showText("La terre qui se souvient.", 2800);
-  await delay(300);
-  await showText("Pendant 400 ans, ils ont construit.<br>Apr\u00e8s chaque saison de pluie. Apr\u00e8s chaque raid.", 4000);
-  await delay(400);
-  await showText("Ils n\u2019ont pas b\u00e2ti un monument.<br>Ils ont r\u00e9pondu \u00e0 la violence par l\u2019architecture.", 4200);
-  await delay(600);
-  createAnnotations();
-  document.getElementById('badge').style.opacity = '1';
-  document.getElementById('locator').style.opacity = '1';
-  document.querySelectorAll('.cb').forEach(b => b.classList.add('ready'));
-}
-
+/* =====================================================
+   HELPERS
+===================================================== */
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function latLon(lat, lon, r) {
+  const phi   = (90 - lat) * Math.PI / 180;
+  const theta = (lon + 180) * Math.PI / 180;
+  return new THREE.Vector3(
+    -r * Math.sin(phi) * Math.cos(theta),
+     r * Math.cos(phi),
+     r * Math.sin(phi) * Math.sin(theta)
+  );
+}
+function easeInOut(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; }
+function lerpCam(cam, controls, toPos, toTarget, dur, cb) {
+  const t0 = performance.now();
+  const fromPos = cam.position.clone();
+  const fromTgt = controls.target.clone();
+  (function tick() {
+    const t = Math.min((performance.now()-t0)/dur, 1);
+    const e = easeInOut(t);
+    cam.position.lerpVectors(fromPos, toPos, e);
+    controls.target.lerpVectors(fromTgt, toTarget, e);
+    controls.update();
+    if (t < 1) requestAnimationFrame(tick); else if (cb) cb();
+  })();
+}
 
-// -- ANNOTATIONS --
-const ANNOTATIONS = [
-  {
-    pos: new THREE.Vector3(0, 6.8, 0),
-    label: "Grenier sacr\u00e9",
-    title: "Le grenier \u2014 Espace des anc\u00eatres",
-    body: "Au sommet de la Takienta, les semences de mil sont gard\u00e9es dans le grenier. Mais c\u2019est aussi le lieu de communication avec les anc\u00eatres. Les esprits montent par la tour comme une antenne vers le ciel. Monter dans la Takienta, c\u2019est se rapprocher du sacr\u00e9."
-  },
-  {
-    pos: new THREE.Vector3(1.6, 0.3, 0),
-    label: "La porte basse",
-    title: "La porte \u2014 Acte d\u2019humilit\u00e9 forc\u00e9e",
-    body: "Cette porte est si petite qu\u2019on doit s\u2019agenouiller pour entrer. Ce n\u2019est pas un hasard. Pendant des si\u00e8cles de raids esclavagistes, un ennemi arm\u00e9 ne pouvait pas entrer l\u2019arme lev\u00e9e. La contrainte physique est une strat\u00e9gie de survie. L\u2019architecture comme r\u00e9sistance."
-  },
-  {
-    pos: new THREE.Vector3(-1.4, 2.5, 0.5),
-    label: "Murs en banco",
-    title: "Les murs \u2014 Architecture f\u00e9minine",
-    body: "40 cm d\u2019\u00e9paisseur d\u2019argile, de paille et de bouse de vache. Ce sont les femmes Batammariba qui construisent et r\u00e9parent ces murs avec leurs mains. La Takienta est un b\u00e2timent f\u00e9minin. Sa solidit\u00e9 vient de leur savoir transmis de m\u00e8re en fille depuis des g\u00e9n\u00e9rations."
-  },
-  {
-    pos: new THREE.Vector3(0, 4.5, 1.5),
-    label: "Terrasse de vie",
-    title: "La terrasse \u2014 Entre ciel et terre",
-    body: "La terrasse est le niveau des vivants : on y dort, on y cuisine, on observe le territoire \u00e0 360 degr\u00e9s. C\u2019est aussi un poste de surveillance. Dans la cosmologie Batammariba, ce niveau interm\u00e9diaire est celui des humains \u2014 entre les animaux (bas) et les anc\u00eatres (haut)."
-  },
+/* =====================================================
+   GLOBE SCENE
+===================================================== */
+let globeScene, globeCam, globeRenderer, globeControls;
+let earthGroup, atmosphere, togoMarker;
+let step = 0, transitioning = false;
+
+const STEPS = [
+  { name:"Afrique de l\u2019Ouest",  sub:"Exploration \u00b7 Patrimoine vivant",              lat:8,    lon:2,   dist:340, btn:"Explorer le Togo" },
+  { name:"R\u00e9publique du Togo",  sub:"Afrique de l\u2019Ouest \u00b7 Golfe de Guin\u00e9e", lat:8.6,  lon:1.2, dist:130, btn:"Voir la Takienta"  },
+  { name:"La Takienta",              sub:"Koutammakou \u00b7 Patrimoine mondial 2004",          lat:10.1, lon:0.82,dist:10,  btn:""                 },
 ];
 
-function createAnnotations() {
-  if (annotationsCreated) return;
-  annotationsCreated = true;
-  ANNOTATIONS.forEach(data => {
-    const div = document.createElement('div');
-    div.className = 'ann';
-    div.textContent = data.label;
-    div.addEventListener('pointerdown', () => openDetail(data.title, data.body));
-    const obj = new CSS2DObject(div);
-    obj.position.copy(data.pos);
-    scene.add(obj);
-    setTimeout(() => div.classList.add('show'), 500 + Math.random()*1200);
-  });
-}
+function initGlobe() {
+  const W = innerWidth, H = innerHeight;
+  globeScene = new THREE.Scene();
+  globeScene.background = new THREE.Color(0x030201);
 
-function openDetail(title, body) {
-  document.getElementById('d-title').textContent = title;
-  document.getElementById('d-body').textContent = body;
-  document.getElementById('detail').classList.add('open');
-}
-window.closeDetail = () => document.getElementById('detail').classList.remove('open');
+  globeCam = new THREE.PerspectiveCamera(45, W/H, 0.1, 2000);
+  const s0 = STEPS[0];
+  globeCam.position.copy(latLon(s0.lat, s0.lon, s0.dist));
+  globeCam.lookAt(0,0,0);
 
-// -- BOOT --
-function finishLoading() {
-  const boot = document.getElementById('boot');
-  boot.style.opacity = '0';
-  setTimeout(() => { boot.style.display = 'none'; runNarrative(); }, 1800);
-}
+  globeRenderer = new THREE.WebGLRenderer({ antialias:true });
+  globeRenderer.setSize(W, H);
+  globeRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  globeRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  globeRenderer.toneMappingExposure = 1.0;
+  document.getElementById('globe-scene').appendChild(globeRenderer.domElement);
 
-// -- BOUTONS --
-let autoRot = true;
-document.getElementById('btn-rot').addEventListener('click', () => {
-  autoRot = !autoRot; controls.autoRotate = autoRot;
-});
-document.getElementById('btn-reset').addEventListener('click', () => {
-  camera.position.set(12, 5, 16); controls.target.set(0, 3, 0); controls.update();
-});
-document.getElementById('btn-info').addEventListener('click', () => {
-  openDetail(
-    'La Takienta \u2014 Koutammakou',
-    'Les tours Takienta sont les maisons-fortresses du peuple Batammariba au nord-est du Togo. Inscrites au Patrimoine Mondial de l\u2019UNESCO en 2004, elles abritent encore 50\u202f000 personnes aujourd\u2019hui. Ce ne sont pas des ruines. C\u2019est une civilisation vivante.'
+  earthGroup = new THREE.Group();
+  globeScene.add(earthGroup);
+
+  const tl = new THREE.TextureLoader();
+  const earthTex  = tl.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
+  const earthNorm = tl.load('https://threejs.org/examples/textures/planets/earth_normal_2048.jpg');
+  const globe = new THREE.Mesh(
+    new THREE.SphereGeometry(100, 64, 64),
+    new THREE.MeshPhongMaterial({ map:earthTex, normalMap:earthNorm, normalScale:new THREE.Vector2(0.5,0.5), shininess:12 })
   );
-});
+  earthGroup.add(globe);
 
-// -- ANIMATION --
-const clock = new THREE.Clock();
-let frame = 0;
+  // Halo dore
+  atmosphere = new THREE.Mesh(
+    new THREE.SphereGeometry(106, 64, 64),
+    new THREE.ShaderMaterial({
+      vertexShader:`varying vec3 vN; void main(){ vN=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+      fragmentShader:`varying vec3 vN; void main(){ float i=pow(0.68-dot(vN,vec3(0,0,1.)),5.); gl_FragColor=vec4(0.976,0.835,0.545,1.)*clamp(i,0.,1.); }`,
+      side:THREE.BackSide, blending:THREE.AdditiveBlending, transparent:true
+    })
+  );
+  earthGroup.add(atmosphere);
 
-function animate() {
-  requestAnimationFrame(animate);
-  const t = clock.getElapsedTime();
-  frame++;
+  // Voile nuit violet
+  earthGroup.add(new THREE.Mesh(
+    new THREE.SphereGeometry(101.5, 64, 64),
+    new THREE.ShaderMaterial({
+      vertexShader:`varying vec3 vN; void main(){ vN=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+      fragmentShader:`varying vec3 vN; void main(){ float d=dot(vN,vec3(0,0,1.)); float i=smoothstep(0.1,-0.4,d)*0.5; gl_FragColor=vec4(0.33,0.255,0.365,i); }`,
+      side:THREE.FrontSide, blending:THREE.NormalBlending, transparent:true, depthWrite:false
+    })
+  ));
 
-  controls.update();
+  // Lumieres globe
+  const sun = new THREE.DirectionalLight(0xfff4e0, 1.5);
+  sun.position.set(350, 200, 100); globeScene.add(sun);
+  globeScene.add(new THREE.DirectionalLight(0x55415d, 0.15).position.set(-350,-100,-100) && sun);
+  globeScene.add(new THREE.AmbientLight(0xfff8f0, 0.15));
 
-  fireLight.intensity = 2.8 + Math.sin(t * 7.3) * 0.6 + Math.sin(t * 13.1) * 0.3;
-  fireLight.position.x = Math.sin(t * 2.1) * 0.08;
-  fireLight.position.z = 3 + Math.sin(t * 3.4) * 0.06;
-
-  skyMat.uniforms.uTime.value = t;
-
-  if (frame % 2 === 0) {
-    const dp = dustGeo.attributes.position;
-    for (let i = 0; i < dustCount; i++) {
-      dp.setX(i, dp.getX(i) + dustVel[i*3]   + 0.005);
-      dp.setY(i, dp.getY(i) + dustVel[i*3+1] + Math.sin(t*0.5+i)*0.001);
-      dp.setZ(i, dp.getZ(i) + dustVel[i*3+2]);
-      if (dp.getX(i) > 25) dp.setX(i, -25);
-      if (dp.getY(i) > 14) dp.setY(i, 0.2);
-    }
-    dp.needsUpdate = true;
+  // Etoiles
+  const sPos = new Float32Array(5000*3);
+  for (let i=0;i<5000;i++) {
+    const r=900+Math.random()*600, u=Math.random(), v=Math.random();
+    const t=2*Math.PI*u, p=Math.acos(2*v-1);
+    sPos[i*3]=r*Math.sin(p)*Math.cos(t); sPos[i*3+1]=r*Math.sin(p)*Math.sin(t); sPos[i*3+2]=r*Math.cos(p);
   }
+  const sGeo = new THREE.BufferGeometry(); sGeo.setAttribute('position', new THREE.BufferAttribute(sPos,3));
+  globeScene.add(new THREE.Points(sGeo, new THREE.PointsMaterial({color:0xfff4e0,size:1.1,transparent:true,opacity:0.7})));
 
-  const ep = emberGeo.attributes.position;
-  for (let i = 0; i < emberCount; i++) {
-    ep.setX(i, ep.getX(i) + emberVel[i*3]   + Math.sin(t*3+i)*0.002);
-    ep.setY(i, ep.getY(i) + emberVel[i*3+1]);
-    ep.setZ(i, ep.getZ(i) + emberVel[i*3+2]);
-    if (ep.getY(i) > 6) {
-      ep.setX(i, (Math.random()-0.5)*1.2);
-      ep.setY(i, 0.1);
-      ep.setZ(i, 2.5 + (Math.random()-0.5)*1.2);
-    }
-  }
-  ep.needsUpdate = true;
+  // Marqueur Togo
+  togoMarker = new THREE.Group();
+  const mMat = new THREE.MeshBasicMaterial({color:0xffffff});
+  const b1 = new THREE.Mesh(new THREE.BoxGeometry(2,0.3,0.3),mMat);
+  const b2 = new THREE.Mesh(new THREE.BoxGeometry(2,0.3,0.3),mMat);
+  b1.rotation.z = Math.PI/4; b2.rotation.z = -Math.PI/4;
+  togoMarker.add(b1,b2);
+  togoMarker.position.copy(latLon(10.1,0.82,101));
+  togoMarker.lookAt(0,0,0);
+  earthGroup.add(togoMarker);
 
-  renderer.render(scene, camera);
-  labelRdr.render(scene, camera);
+  // Frontieres pays
+  fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
+    .then(r=>r.json()).then(data=>{
+      const matAll = new THREE.LineBasicMaterial({color:0xf9d58b,transparent:true,opacity:0.45});
+      const matTogo = new THREE.LineBasicMaterial({color:0xffffff,opacity:1});
+      data.features.forEach(f=>{
+        const isTogo = f.properties.name==="Togo";
+        const draw = ring=>{
+          const pts = ring.map(c=>latLon(c[1],c[0],100.6));
+          earthGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), isTogo?matTogo:matAll));
+        };
+        if (f.geometry.type==='Polygon') f.geometry.coordinates.forEach(draw);
+        else if (f.geometry.type==='MultiPolygon') f.geometry.coordinates.forEach(p=>p.forEach(draw));
+      });
+    }).catch(()=>{});
+
+  globeControls = new OrbitControls(globeCam, globeRenderer.domElement);
+  globeControls.enableDamping = true; globeControls.dampingFactor = 0.05;
+  globeControls.autoRotate = true; globeControls.autoRotateSpeed = 0.18;
+
+  document.getElementById('enter-btn').addEventListener('click', onNextStep);
+  document.getElementById('back-to-globe').addEventListener('click', backToGlobe);
+  document.getElementById('info-close').addEventListener('click', closeInfo);
 }
-animate();
 
-// -- RESPONSIVE --
-window.addEventListener('resize', () => {
-  const w = innerWidth, h = innerHeight;
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
-  labelRdr.setSize(w, h);
-});
+function onNextStep() {
+  if (transitioning) return;
+  transitioning = true;
+  document.getElementById('ui-top').classList.add('fade');
+  document.getElementById('ui-bottom').classList.add('fade');
 
-if (window.DeviceOrientationEvent) {
-  window.addEventListener('deviceorientation', e => {
-    if (!e.beta) return;
-    const b = THREE.MathUtils.degToRad(e.beta  - 45);
-    const g = THREE.MathUtils.degToRad(e.gamma);
-    camera.position.x += g * 0.02;
-    camera.position.y = Math.max(2, Math.min(20, 5 + b * 3));
-    controls.update();
+  setTimeout(async ()=>{
+    step = (step+1) % STEPS.length;
+    const s = STEPS[step];
+    document.getElementById('globe-title').textContent = s.name;
+    document.getElementById('globe-sub').textContent = s.sub;
+
+    if (step === 2) {
+      // Zoom vers le Togo puis portal
+      globeControls.autoRotate = false; globeControls.enabled = false;
+      const close = latLon(10.1,0.82,115);
+      const tgPos = new THREE.Vector3(); togoMarker.getWorldPosition(tgPos);
+
+      lerpCam(globeCam, globeControls, close, tgPos, 2200, async ()=>{
+        await delay(400);
+        if (atmosphere) atmosphere.visible = false;
+        await launchPortal();
+        initLandscape();
+        const lc = document.getElementById('landscape');
+        lc.style.display = 'block';
+        await delay(200); lc.style.opacity = '1';
+        await delay(1200);
+        transitioning = false;
+        document.getElementById('back-btn').classList.add('show');
+        await delay(800);
+        document.getElementById('badge').style.opacity = '1';
+        runNarrative();
+        setTimeout(()=>{
+          document.getElementById('nav-hint').classList.add('show');
+          setTimeout(()=>document.getElementById('nav-hint').classList.remove('show'),4500);
+        }, 8000);
+      });
+    } else {
+      const s2 = STEPS[step];
+      const toPos = latLon(s2.lat, s2.lon, s2.dist);
+      lerpCam(globeCam, globeControls, toPos, new THREE.Vector3(0,0,0), 2500, ()=>{
+        transitioning = false;
+        document.getElementById('globe-title').textContent = s2.name;
+        document.getElementById('globe-sub').textContent = s2.sub;
+        const btn = document.getElementById('enter-btn');
+        btn.textContent = s2.btn;
+        document.getElementById('ui-top').classList.remove('fade');
+        document.getElementById('ui-bottom').classList.remove('fade');
+      });
+    }
+  }, 600);
+}
+
+async function launchPortal() {
+  const portal = document.getElementById('portal');
+  const dna    = document.getElementById('dna-wrap');
+  const textEl = document.getElementById('portal-text');
+
+  dna.innerHTML = '';
+  for (let i=0;i<8;i++) {
+    const d = document.createElement('div');
+    d.className = 'dna-dot';
+    d.style.top = (i*14)+'px';
+    d.style.animationDelay = (i*0.22)+'s';
+    dna.appendChild(d);
+  }
+
+  portal.classList.add('active');
+  document.getElementById('globe-scene').style.opacity = '0';
+  await delay(500);
+
+  textEl.innerHTML = '';
+  const lines = [
+    { txt:'[ CONNEXION PORTAIL... ]',         fin:false },
+    { txt:'[ M\u00c9MOIRE BATAMMARIBA ACTIVE ]',   fin:false },
+    { txt:'[ CHARGEMENT : KOUTAMMAKOU ]',     fin:false },
+    { txt:'[ CONSCIENCE ANCESTRALE \u00c9VEILL\u00c9E ]', fin:false },
+    { txt:'',                                  fin:false },
+    { txt:'Vous entrez dans la m\u00e9moire.',       fin:true  },
+  ];
+  for (const {txt,fin} of lines) {
+    if (!txt) { textEl.appendChild(document.createElement('br')); await delay(150); continue; }
+    const span = document.createElement('span');
+    if (fin) span.className='finale';
+    textEl.appendChild(span);
+    await new Promise(res=>{
+      let i=0; const iv=setInterval(()=>{
+        span.textContent += txt[i++];
+        if (i>=txt.length){clearInterval(iv);res();}
+      }, 20);
+    });
+    textEl.appendChild(document.createElement('br'));
+    await delay(200);
+  }
+  await delay(900);
+  portal.style.transition = 'opacity 1.5s ease';
+  portal.style.opacity = '0';
+  await delay(1500);
+  portal.style.display = 'none';
+}
+
+function backToGlobe() {
+  document.getElementById('landscape').style.opacity = '0';
+  document.getElementById('back-btn').classList.remove('show');
+  document.getElementById('badge').style.opacity = '0';
+  document.getElementById('nav-hint').classList.remove('show');
+  closeInfo();
+
+  setTimeout(()=>{
+    document.getElementById('landscape').style.display = 'none';
+    step = 0;
+    if (atmosphere) atmosphere.visible = true;
+    document.getElementById('globe-scene').style.opacity = '1';
+    globeControls.enabled = true; globeControls.autoRotate = true;
+    const s0 = STEPS[0];
+    globeCam.position.copy(latLon(s0.lat, s0.lon, s0.dist));
+    globeCam.lookAt(0,0,0);
+    document.getElementById('globe-title').textContent = s0.name;
+    document.getElementById('globe-sub').textContent = s0.sub;
+    document.getElementById('enter-btn').textContent = 'Explorer le Togo';
+    document.getElementById('ui-top').classList.remove('fade');
+    document.getElementById('ui-bottom').classList.remove('fade');
+  }, 1600);
+}
+
+function globeLoop() {
+  requestAnimationFrame(globeLoop);
+  if (step < 2 || transitioning) {
+    globeControls.update();
+    globeRenderer.render(globeScene, globeCam);
+  }
+}
+
+/* =====================================================
+   LANDSCAPE SCENE (NUIT AFRICAINE)
+===================================================== */
+let lScene, lCam, lRenderer, lControls, labelRdr;
+let mainModel = null;
+let anns = [];
+let orbitTween = null;
+const simplex = new SimplexNoise();
+
+function initLandscape() {
+  if (lScene) return;
+  const W = innerWidth, H = innerHeight;
+
+  lScene = new THREE.Scene();
+  lScene.fog = new THREE.FogExp2(0x120800, 0.004);
+
+  lCam = new THREE.PerspectiveCamera(45, W/H, 1, 8000);
+  lCam.position.set(100, 70, 140);
+  lCam.lookAt(0,0,0);
+
+  lRenderer = new THREE.WebGLRenderer({ antialias:true });
+  lRenderer.setSize(W, H);
+  lRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  lRenderer.shadowMap.enabled = true;
+  lRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  lRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  lRenderer.toneMappingExposure = 0.55;
+  lRenderer.outputColorSpace = THREE.SRGBColorSpace;
+  document.getElementById('landscape').appendChild(lRenderer.domElement);
+
+  labelRdr = new CSS2DRenderer();
+  labelRdr.setSize(W, H);
+  labelRdr.domElement.style.cssText = 'position:absolute;top:0;pointer-events:none;';
+  document.getElementById('landscape').appendChild(labelRdr.domElement);
+
+  lControls = new OrbitControls(lCam, lRenderer.domElement);
+  lControls.enableDamping = true; lControls.dampingFactor = 0.05;
+  lControls.maxPolarAngle = Math.PI/2.05;
+  lControls.autoRotate = true; lControls.autoRotateSpeed = 0.2;
+  lControls.minDistance = 40; lControls.maxDistance = 380;
+
+  // Lumieres nocturnes
+  lScene.add(new THREE.AmbientLight(0x1a0800, 0.4));
+  const fireLight = new THREE.PointLight(0xff6b20, 4.5, 80);
+  fireLight.position.set(0, 3, 8); fireLight.castShadow = true;
+  fireLight.shadow.mapSize.set(1024,1024);
+  lScene.add(fireLight);
+  lScene.userData.fireLight = fireLight;
+
+  const rimLight = new THREE.DirectionalLight(0x3d1500, 0.5);
+  rimLight.position.set(-80, 120, -60); lScene.add(rimLight);
+
+  // Ciel nuit africaine custom
+  buildNightSky();
+
+  // Terrain
+  buildTerrain();
+
+  // Arbres + buissons
+  buildVegetation();
+
+  // Village distant
+  buildVillage();
+
+  // Feu de camp
+  buildFire();
+
+  // Modele principal
+  loadModel();
+
+  // Boucle paysage
+  const clock = new THREE.Clock();
+  function lLoop() {
+    requestAnimationFrame(lLoop);
+    const t = clock.getElapsedTime();
+    if (step < 2) return;
+    lControls.update();
+
+    // Scintillement feu
+    const fl = lScene.userData.fireLight;
+    if (fl) {
+      fl.intensity = 4.2 + Math.sin(t*7.1)*0.8 + Math.sin(t*13.5)*0.35;
+      fl.position.x = Math.sin(t*2.3)*0.5;
+    }
+
+    // Braises
+    const eg = lScene.userData.emberGeo;
+    const ev = lScene.userData.emberVel;
+    if (eg && ev) {
+      const ep = eg.attributes.position;
+      for (let i=0;i<120;i++) {
+        ep.setX(i, ep.getX(i)+ev[i*3]+Math.sin(t*3+i)*0.003);
+        ep.setY(i, ep.getY(i)+ev[i*3+1]);
+        ep.setZ(i, ep.getZ(i)+ev[i*3+2]);
+        if (ep.getY(i)>18){ ep.setX(i,(Math.random()-0.5)*4); ep.setY(i,0.5); ep.setZ(i,8+(Math.random()-0.5)*4); }
+      }
+      ep.needsUpdate=true;
+    }
+
+    lRenderer.render(lScene, lCam);
+    labelRdr.render(lScene, lCam);
+  }
+  lLoop();
+}
+
+function buildNightSky() {
+  // 5000 etoiles
+  const sp = new Float32Array(5000*3);
+  for (let i=0;i<5000;i++) {
+    const r=1400, theta=Math.random()*Math.PI*2, phi=Math.acos(2*Math.random()-1);
+    sp[i*3]=r*Math.sin(phi)*Math.cos(theta);
+    sp[i*3+1]=r*Math.abs(Math.sin(phi));
+    sp[i*3+2]=r*Math.sin(phi)*Math.sin(theta);
+  }
+  const sg=new THREE.BufferGeometry(); sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+  lScene.add(new THREE.Points(sg,new THREE.PointsMaterial({color:0xfff0dd,size:0.6,transparent:true,opacity:0.65})));
+
+  // Sphere ciel nuit
+  const skyGeo=new THREE.SphereGeometry(1400,32,16);
+  const skyMat=new THREE.ShaderMaterial({
+    side:THREE.BackSide,
+    vertexShader:`varying vec3 vP; void main(){ vP=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+    fragmentShader:`varying vec3 vP; void main(){
+      float h=normalize(vP).y;
+      vec3 night=vec3(0.008,0.004,0.0);
+      vec3 hor=vec3(0.22,0.055,0.008);
+      gl_FragColor=vec4(mix(hor,night,smoothstep(-0.08,0.3,h)),1.);
+    }`
+  });
+  lScene.add(new THREE.Mesh(skyGeo,skyMat));
+}
+
+function buildTerrain() {
+  const geo = new THREE.PlaneGeometry(2500,2500,128,128);
+  geo.rotateX(-Math.PI/2);
+  const pos = geo.attributes.position.array;
+  const colors = [];
+  const c1 = new THREE.Color(0x5a3210); // terre rouge
+  const c2 = new THREE.Color(0x2d4015); // herbe sombre
+
+  for (let i=0;i<pos.length;i+=3) {
+    const x=pos[i], z=pos[i+2];
+    pos[i+1] = simplex.noise(x/400,z/400)*5 + simplex.noise(x/80,z/80)*1.2;
+    const n = simplex.noise(x/300,z/300)+simplex.noise(x/100,z/100)*0.5;
+    const mix = (n>0.2 && Math.sqrt(x*x+z*z)>200) ? 0.8 : 0;
+    const col = new THREE.Color().lerpColors(c1,c2,mix);
+    colors.push(col.r,col.g,col.b);
+  }
+  geo.computeVertexNormals();
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.95,metalness:0}));
+  mesh.receiveShadow=true; lScene.add(mesh);
+}
+
+function buildVegetation() {
+  const tMat=new THREE.MeshStandardMaterial({color:0x2a1808});
+  const lMat=new THREE.MeshStandardMaterial({color:0x0d1e0a});
+  for (let i=0;i<160;i++) {
+    const g=new THREE.Group();
+    g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.6,7),tMat),{position:new THREE.Vector3(0,3.5,0)}));
+    for (let j=0;j<10;j++) {
+      const l=new THREE.Mesh(new THREE.IcosahedronGeometry(Math.random()*2+2,0),lMat);
+      l.position.set((Math.random()-0.5)*4,7+Math.random()*2,(Math.random()-0.5)*4);
+      l.castShadow=true; g.add(l);
+    }
+    let x,z; do { x=(Math.random()-0.5)*2000; z=(Math.random()-0.5)*2000; } while(Math.sqrt(x*x+z*z)<280);
+    g.position.set(x,simplex.noise(x/400,z/400)*5,z);
+    g.scale.setScalar(1.5+Math.random()*2.5); lScene.add(g);
+  }
+  const bMat=new THREE.MeshStandardMaterial({color:0x1a2d10});
+  for (let k=0;k<350;k++) {
+    const b=new THREE.Mesh(new THREE.IcosahedronGeometry(Math.random()*1.5+0.7,0),bMat);
+    let bx,bz; do{bx=(Math.random()-0.5)*1800;bz=(Math.random()-0.5)*1800;}while(Math.sqrt(bx*bx+bz*bz)<220);
+    b.position.set(bx,simplex.noise(bx/400,bz/400)*5,bz);
+    b.castShadow=true; lScene.add(b);
+  }
+}
+
+function buildVillage() {
+  const wm=new THREE.MeshStandardMaterial({color:0x6b4c38,roughness:1});
+  const rm=new THREE.MeshStandardMaterial({color:0x4a3820,roughness:1});
+  for (let c=0;c<8;c++) {
+    let cx,cz; do{cx=(Math.random()-0.5)*1400;cz=(Math.random()-0.5)*1400;}while(Math.sqrt(cx*cx+cz*cz)<320);
+    const cg=new THREE.Group();
+    for (let i=0;i<4;i++) {
+      const h=new THREE.Group();
+      const wall=new THREE.Mesh(new THREE.CylinderGeometry(2,2.3,5,20),wm);
+      const roof=new THREE.Mesh(new THREE.ConeGeometry(3,4.5,20),rm);
+      roof.position.y=4.8; h.add(wall,roof);
+      h.position.set((Math.random()-0.5)*30,2,(Math.random()-0.5)*30);
+      h.scale.setScalar(1.4+Math.random()*1.2);
+      h.traverse(n=>{if(n.isMesh)n.castShadow=true;});
+      cg.add(h);
+    }
+    // Petit feu de village
+    const vf=new THREE.PointLight(0xff4400,0.8,20);
+    vf.position.set(cx,2,cz); lScene.add(vf);
+    cg.position.set(cx,0,cz); lScene.add(cg);
+  }
+}
+
+function buildFire() {
+  // Buches
+  const logMat=new THREE.MeshStandardMaterial({color:0x1a0800,roughness:1});
+  for (let i=0;i<4;i++) {
+    const log=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.4,5,6),logMat);
+    const a=(i/4)*Math.PI*2;
+    log.position.set(Math.cos(a)*2,0,8+Math.sin(a)*1.2);
+    log.rotation.z=Math.PI/2; log.rotation.y=a; lScene.add(log);
+  }
+  // Braises
+  const eCount=120;
+  const ePos=new Float32Array(eCount*3);
+  const eVel=new Float32Array(eCount*3);
+  for (let i=0;i<eCount;i++) {
+    ePos[i*3]=(Math.random()-0.5)*4; ePos[i*3+1]=Math.random()*2; ePos[i*3+2]=8+(Math.random()-0.5)*4;
+    eVel[i*3]=(Math.random()-0.5)*0.03; eVel[i*3+1]=0.04+Math.random()*0.06; eVel[i*3+2]=(Math.random()-0.5)*0.02;
+  }
+  const eGeo=new THREE.BufferGeometry(); eGeo.setAttribute('position',new THREE.BufferAttribute(ePos,3));
+  lScene.add(new THREE.Points(eGeo,new THREE.PointsMaterial({color:0xff8c00,size:0.25,transparent:true,opacity:0.9,depthWrite:false})));
+  lScene.userData.emberGeo=eGeo; lScene.userData.emberVel=eVel;
+}
+
+/* =====================================================
+   CHARGEMENT MODELE
+===================================================== */
+const PARTS = {
+  "THATCHED COVER_1": { title:"Toit en Chaume",       sub:"Toiture traditionnelle",     body:"Structure c\u00f4nique amovible qui prot\u00e8ge le grenier. En saison s\u00e8che, il peut \u00eatre retir\u00e9 pour a\u00e9rer les r\u00e9serves. Sa forme est un savoir transmis de g\u00e9n\u00e9ration en g\u00e9n\u00e9ration \u2014 pas un abri, une m\u00e9moire." },
+  "ATTIC_1":          { title:"Grenier Principal",     sub:"Stockage alimentaire",       body:"Gard\u00e9 en hauteur pour prot\u00e9ger le mil des inondations et des pr\u00e9dateurs. Mais ce grenier est aussi un espace sacr\u00e9 : les semences pour l\u2019ann\u00e9e suivante y sont conserv\u00e9es. Nourrir les vivants, pr\u00e9parer demain." },
+  "ATTIC_2":          { title:"Grenier Secondaire",    sub:"R\u00e9serves ventil\u00e9es",          body:"Second grenier ventil\u00e9 naturellement par la disposition des ouvertures. L\u2019ing\u00e9nierie Batammariba r\u00e9sout en 2000 avant J.-C. ce que les architectes modernes appellent \u00ab ventilation passive \u00bb." },
+  "LADDER_2":         { title:"\u00c9chelle Sacr\u00e9e",          sub:"Circulation verticale",      body:"On ne monte pas dans une Takienta. On s\u2019\u00e9l\u00e8ve. Chaque \u00e9chelon traverse un niveau : les animaux en bas, les vivants au milieu, les anc\u00eatres en haut. La verticalit\u00e9 est m\u00e9taphysique \u2014 pas fonctionnelle." },
+  "FORTRESSES":       { title:"Murs D\u00e9fensifs",       sub:"Architecture de r\u00e9sistance",    body:"40 cm de banco \u2014 terre, paille, bouse de vache. Construits et r\u00e9par\u00e9s par les femmes Batammariba apr\u00e8s chaque saison des pluies. Ces murs ne sont pas de la maconnerie. Ils sont une r\u00e9ponse \u00e0 des si\u00e8cles de raids esclavagistes." },
+  "ALTARS":           { title:"Autels Ancestraux",     sub:"Espace spirituel",           body:"Le kuye \u2014 espace des offrandes aux anc\u00eatres. La Takienta est aussi une antenne vers les morts. Les rites de passage, les n\u00e9gociations avec le pass\u00e9, se font ici. L\u2019architecture comme m\u00e9diation entre les mondes." },
+};
+
+const ANN_ORDER = ["THATCHED COVER_1","ATTIC_1","LADDER_2","ATTIC_2","FORTRESSES","ALTARS"];
+const ANN_OFFSET = {
+  "THATCHED COVER_1":{ x:18, y:34, z:-12 },
+  "ATTIC_1":         { x:38, y:22, z:-26 },
+  "LADDER_2":        { x:26, y: 6, z:-18 },
+  "ATTIC_2":         { x:-32,y:20, z: 22 },
+  "FORTRESSES":      { x:-38,y: 4, z: 26 },
+  "ALTARS":          { x:30, y:-6, z:-20 },
+};
+
+function loadModel() {
+  const draco=new DRACOLoader(); draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+  const loader=new GLTFLoader(); loader.setDRACOLoader(draco);
+  const urls=['./assets/la-takienta.glb','https://raw.githubusercontent.com/fansestar355-star/Toguna-Assets/main/La_Takienta.glb'];
+
+  function tryLoad(idx) {
+    if (idx>=urls.length) { buildProceduralTakienta(); return; }
+    loader.load(urls[idx], gltf=>{
+      const m=gltf.scene; m.scale.setScalar(10);
+      const b=new THREE.Box3().setFromObject(m); m.position.set(0,-b.min.y,0);
+      m.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
+      lScene.add(m); mainModel=m;
+      setTimeout(()=>ANN_ORDER.forEach(k=>addAnnotation(k)), 600);
+    }, null, ()=>tryLoad(idx+1));
+  }
+  tryLoad(0);
+}
+
+function buildProceduralTakienta() {
+  const wm=new THREE.MeshStandardMaterial({color:0x9a6040,roughness:0.92});
+  const rm=new THREE.MeshStandardMaterial({color:0x6a5028,roughness:1});
+  const dm=new THREE.MeshStandardMaterial({color:0x150900,roughness:1});
+  const g=new THREE.Group();
+
+  // Tour principale
+  const mt=new THREE.Group();
+  [[4,4.8,18,9],[4.5,4,2,19]].forEach(([t,b,h,y])=>{
+    const m=new THREE.Mesh(new THREE.CylinderGeometry(t,b,h,32),wm); m.position.y=y; mt.add(m);
+  });
+  const roof=new THREE.Mesh(new THREE.ConeGeometry(6,8,32),rm); roof.position.y=24; roof.name="THATCHED COVER_1"; mt.add(roof);
+  const door=new THREE.Mesh(new THREE.PlaneGeometry(1.8,3.5),dm); door.position.set(0,2,4.85); mt.add(door);
+  mt.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
+  g.add(mt);
+
+  // Tours secondaires
+  [
+    {x:10,z:0,h:10,r:2.5,name:"ATTIC_1"},
+    {x:-10,z:0,h:11,r:2.3,name:"ATTIC_2"},
+    {x:5,z:9,h:9,r:2.2,name:"ATTIC_3"},
+    {x:-5,z:9,h:10,r:2.4},
+    {x:5,z:-9,h:9.5,r:2.0,name:"FORTRESSES"},
+    {x:-5,z:-9,h:10.5,r:2.1,name:"ALTARS"},
+  ].forEach(d=>{
+    const tg=new THREE.Group(); if(d.name) tg.name=d.name;
+    const b=new THREE.Mesh(new THREE.CylinderGeometry(d.r,d.r*1.15,d.h,24),wm); b.position.y=d.h/2; tg.add(b);
+    const r=new THREE.Mesh(new THREE.ConeGeometry(d.r+1.2,5,24),rm); r.position.y=d.h+2.5; tg.add(r);
+    tg.position.set(d.x,0,d.z);
+    tg.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
+    g.add(tg);
+  });
+
+  // Echelle
+  const ech=new THREE.Group(); ech.name="LADDER_2"; g.add(ech);
+
+  g.scale.setScalar(2.5); lScene.add(g); mainModel=g;
+  setTimeout(()=>ANN_ORDER.forEach(k=>addAnnotation(k)), 600);
+}
+
+/* =====================================================
+   ANNOTATIONS
+===================================================== */
+function addAnnotation(meshName) {
+  if (!mainModel) return;
+  let target=null;
+  mainModel.traverse(c=>{ if(c.name===meshName) target=c; });
+  if (!target) return;
+
+  const anchorPt = new THREE.Vector3();
+  if (meshName==='ALTARS') target.getWorldPosition(anchorPt);
+  else new THREE.Box3().setFromObject(target).getCenter(anchorPt);
+
+  const off = ANN_OFFSET[meshName]||{x:10,y:14,z:8};
+  const labelPt = anchorPt.clone().add(new THREE.Vector3(off.x,off.y,off.z));
+
+  // Trait
+  lScene.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([anchorPt,labelPt]),
+    new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.22})
+  ));
+
+  // Losange
+  const dot=document.createElement('div'); dot.className='ann-dot';
+  const dotObj=new CSS2DObject(dot); dotObj.position.copy(anchorPt); lScene.add(dotObj);
+
+  // Index + bloc texte
+  const oi=ANN_ORDER.indexOf(meshName);
+  const idx=oi>=0?oi:anns.length;
+  const isLeft=off.x<0;
+
+  const root=document.createElement('div');
+  const wrap=document.createElement('div');
+  wrap.className='ann-wrap';
+  wrap.style.animationDelay=(idx*280+1000)+'ms';
+  wrap.style.transform=isLeft?'translateX(-100%)':'translateX(0)';
+
+  const card=document.createElement('div');
+  card.className='ann-card';
+  card.style.alignItems=isLeft?'flex-end':'flex-start';
+  card.style.textAlign=isLeft?'right':'left';
+  card.addEventListener('click',()=>showInfo(meshName,anchorPt,labelPt));
+
+  const idxEl=document.createElement('div'); idxEl.className='ann-idx'; idxEl.textContent=String(idx+1).padStart(2,'0');
+  const titleEl=document.createElement('div'); titleEl.className='ann-title'; titleEl.textContent=PARTS[meshName]?.title??meshName;
+  const divEl=document.createElement('div'); divEl.className='ann-divider';
+  const subEl=document.createElement('div'); subEl.className='ann-sub'; subEl.textContent=PARTS[meshName]?.sub??'Architecture Batammariba';
+
+  card.append(idxEl,titleEl,divEl,subEl);
+  wrap.appendChild(card); root.appendChild(wrap);
+  const cardObj=new CSS2DObject(root); cardObj.position.copy(labelPt); lScene.add(cardObj);
+
+  anns.push({cardObj,dotObj});
+}
+
+/* =====================================================
+   INFO + CAMERA GSAP
+===================================================== */
+function showInfo(partName, anchorPt, labelPt) {
+  const d=PARTS[partName]; if(!d) return;
+  document.getElementById('info-title').textContent=d.title;
+  document.getElementById('info-body').textContent=d.body;
+  document.getElementById('info-card').classList.add('active');
+
+  if (lControls) lControls.autoRotate=false;
+  if (orbitTween) { orbitTween.kill(); orbitTween=null; }
+
+  const dir=lCam.position.clone().sub(anchorPt).normalize();
+  let zd=40;
+  if (partName==='THATCHED COVER_1') zd=28;
+  if (partName==='FORTRESSES') zd=55;
+  const tCamPos=anchorPt.clone().add(dir.multiplyScalar(zd));
+  tCamPos.y=Math.max(tCamPos.y, anchorPt.y+8);
+
+  gsap.to(lControls.target,{x:anchorPt.x,y:anchorPt.y,z:anchorPt.z,duration:0.6,ease:"power2.out",onUpdate:()=>lControls.update()});
+  gsap.to(lCam.position,{x:tCamPos.x,y:tCamPos.y,z:tCamPos.z,duration:1.4,delay:0.1,ease:"power3.inOut",
+    onUpdate:()=>lControls.update(),
+    onComplete:()=>{
+      const dx=lCam.position.x-anchorPt.x, dz=lCam.position.z-anchorPt.z;
+      const rad=Math.sqrt(dx*dx+dz*dz), startA=Math.atan2(dz,dx), sweep=THREE.MathUtils.degToRad(38);
+      const proxy={a:startA};
+      orbitTween=gsap.to(proxy,{a:startA+sweep,duration:3.5,ease:"power1.inOut",yoyo:true,repeat:1,
+        onUpdate:()=>{
+          lCam.position.x=anchorPt.x+rad*Math.cos(proxy.a);
+          lCam.position.z=anchorPt.z+rad*Math.sin(proxy.a);
+          lCam.lookAt(anchorPt); lControls.update();
+        },
+        onComplete:()=>{orbitTween=null;}
+      });
+    }
   });
 }
+
+function closeInfo() {
+  document.getElementById('info-card').classList.remove('active');
+  if (orbitTween){orbitTween.kill();orbitTween=null;}
+  if (!lControls) return;
+  gsap.to(lControls.target,{x:0,y:0,z:0,duration:0.8,ease:"power2.out",onUpdate:()=>lControls.update()});
+  gsap.to(lCam.position,{x:100,y:70,z:140,duration:1.8,delay:0.1,ease:"power3.inOut",
+    onUpdate:()=>lControls.update(),
+    onComplete:()=>{if(lControls)lControls.autoRotate=true;}
+  });
+}
+
+/* =====================================================
+   SEQUENCE NARRATIVE
+===================================================== */
+const nt=document.getElementById('nt');
+function showText(html, dur) {
+  return new Promise(res=>{
+    nt.innerHTML=html; nt.classList.add('show');
+    setTimeout(()=>{ nt.classList.remove('show'); setTimeout(res,1400); }, dur);
+  });
+}
+async function runNarrative() {
+  document.getElementById('narrative').classList.add('show');
+  await delay(600);
+  await showText("Ils appelaient cet endroit <em>Koutammakou</em>.", 3200);
+  await delay(300);
+  await showText("La terre qui se souvient.", 2800);
+  await delay(300);
+  await showText("Pendant 400 ans, ils ont construit.<br>Apr\u00e8s chaque raid. Apr\u00e8s chaque saison de pluie.", 4000);
+  await delay(400);
+  await showText("Ils n\u2019ont pas b\u00e2ti un monument.<br>Ils ont r\u00e9pondu \u00e0 la violence par <em>l\u2019architecture</em>.", 4500);
+  await delay(800);
+  document.getElementById('narrative').classList.remove('show');
+}
+
+/* =====================================================
+   RESIZE
+===================================================== */
+window.addEventListener('resize',()=>{
+  const W=innerWidth,H=innerHeight;
+  globeCam.aspect=W/H; globeCam.updateProjectionMatrix(); globeRenderer.setSize(W,H);
+  if(lCam){lCam.aspect=W/H;lCam.updateProjectionMatrix();lRenderer.setSize(W,H);labelRdr.setSize(W,H);}
+});
+
+/* =====================================================
+   INIT
+===================================================== */
+initGlobe();
+globeLoop();
 </script>
 </body>
 </html>
