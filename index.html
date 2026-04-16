@@ -850,7 +850,7 @@ const ANN_OFFSET = {
 function loadModel() {
   const draco=new DRACOLoader(); draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
   const loader=new GLTFLoader(); loader.setDRACOLoader(draco);
-  const urls=['./assets/la-takienta.glb','https://raw.githubusercontent.com/fansestar355-star/Toguna-Assets/main/La_Takienta.glb'];
+  const urls=['./assets/la-takienta-meshy.glb','https://raw.githubusercontent.com/fansestar355-star/Toguna-Assets/main/La_Takienta.glb'];
 
   function tryLoad(idx) {
     if (idx>=urls.length) { buildProceduralTakienta(); return; }
