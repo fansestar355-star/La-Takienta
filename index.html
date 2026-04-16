@@ -1,15 +1,14 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>La Takienta â€” Koutammakou</title>
+<title>La Takienta &mdash; Koutammakou</title>
 <style>
   *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
   html, body { width:100%; height:100%; background:#000; overflow:hidden; }
   canvas { display:block; }
 
-  /* â”€â”€ LOADING â”€â”€ */
   #boot {
     position:fixed; inset:0; background:#000;
     display:flex; align-items:center; justify-content:center;
@@ -22,10 +21,8 @@
   }
   @keyframes fall { 0%{transform:translateY(-60px);opacity:0} 60%{opacity:1} 100%{transform:translateY(60px);opacity:0} }
 
-  /* â”€â”€ CANVAS CONTAINER â”€â”€ */
   #app { position:fixed; inset:0; }
 
-  /* â”€â”€ TEXTES NARRATIFS CSS â”€â”€ */
   #narrative {
     position:fixed; inset:0; pointer-events:none; z-index:10;
     display:flex; align-items:center; justify-content:center;
@@ -41,7 +38,6 @@
   .n-text.show { opacity:1; transform:translateY(0); }
   .n-text em { font-style:italic; color:#f4a460; }
 
-  /* â”€â”€ SOUS-TITRE LOCATIF â”€â”€ */
   #locator {
     position:fixed; top:24px; left:50%; transform:translateX(-50%);
     color:#8b4513; font-family:Georgia,serif; font-size:.75rem;
@@ -50,19 +46,17 @@
     pointer-events:none;
   }
 
-  /* â”€â”€ ANNOTATIONS 3D â”€â”€ */
   .ann {
     font-family:Georgia,serif; font-size:.78rem;
     color:#ffe4b5; pointer-events:all; cursor:pointer;
     border-left:2px solid #c1440e; padding:4px 10px;
     background:rgba(10,5,0,.75); backdrop-filter:blur(6px);
-    opacity:0; transition:opacity .8s; white-space:nowrap;
+    opacity:0; transition:opacity .8s;
     max-width:220px; white-space:normal; line-height:1.4;
   }
   .ann.show { opacity:1; }
   .ann:hover { color:#f4a460; border-color:#f4a460; }
 
-  /* â”€â”€ PANEL DETAIL â”€â”€ */
   #detail {
     position:fixed; bottom:0; left:0; right:0; z-index:20;
     background:linear-gradient(0deg,rgba(5,2,0,.97) 0%,rgba(5,2,0,.8) 70%,transparent);
@@ -80,7 +74,6 @@
     font-size:.85rem; display:flex; align-items:center; justify-content:center;
   }
 
-  /* â”€â”€ CONTROLS â”€â”€ */
   #ctrl {
     position:fixed; bottom:28px; right:20px;
     display:flex; flex-direction:column; gap:10px; z-index:15;
@@ -95,7 +88,6 @@
   .cb.ready { opacity:1; pointer-events:all; }
   .cb:hover { transform:scale(1.1); background:rgba(244,164,96,.85); }
 
-  /* â”€â”€ BADGE UNESCO â”€â”€ */
   #badge {
     position:fixed; top:20px; left:20px; z-index:15;
     background:rgba(5,2,0,.82); border:1px solid #5a3010; border-radius:6px;
@@ -105,7 +97,6 @@
     backdrop-filter:blur(6px);
   }
 
-  /* â”€â”€ CURSEUR BRAISE â”€â”€ */
   #cursor {
     position:fixed; width:8px; height:8px; border-radius:50%;
     background:#c1440e; box-shadow:0 0 10px 3px #c1440e88;
@@ -148,12 +139,9 @@ import * as THREE from 'three';
 import { OrbitControls }    from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader }       from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader }      from 'three/addons/loaders/DRACOLoader.js';
-import { Sky }              from 'three/addons/objects/Sky.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// CURSEUR PERSONNALISE
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- CURSEUR PERSONNALISE --
 const cur = document.getElementById('cursor');
 document.addEventListener('mousemove', e => {
   cur.style.left = e.clientX + 'px';
@@ -161,9 +149,7 @@ document.addEventListener('mousemove', e => {
 });
 document.body.style.cursor = 'none';
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// SCENE
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- SCENE --
 const W = innerWidth, H = innerHeight;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -172,7 +158,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.6;  // Sombre et chaleureux
+renderer.toneMappingExposure = 0.6;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.getElementById('app').appendChild(renderer.domElement);
 
@@ -182,16 +168,13 @@ Object.assign(labelRdr.domElement.style, { position:'absolute', top:'0', pointer
 document.getElementById('app').appendChild(labelRdr.domElement);
 
 const scene = new THREE.Scene();
-// Brume chaude epaisse : on emerge de la chaleur
 scene.fog = new THREE.FogExp2(0x1a0800, 0.006);
 scene.background = new THREE.Color(0x050200);
 
 const camera = new THREE.PerspectiveCamera(55, W/H, 0.1, 600);
 camera.position.set(12, 5, 16);
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// CONTROLES â€” rotation douce autour de la tour
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- CONTROLES --
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.04;
@@ -202,10 +185,7 @@ controls.target.set(0, 3, 0);
 controls.autoRotate = true;
 controls.autoRotateSpeed = 0.25;
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// CIEL NUIT AFRICAINE
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Etoiles
+// -- CIEL NUIT AFRICAINE --
 const starGeo = new THREE.BufferGeometry();
 const starPos = new Float32Array(4000 * 3);
 for (let i = 0; i < 4000; i++) {
@@ -213,13 +193,12 @@ for (let i = 0; i < 4000; i++) {
   const theta = Math.random() * Math.PI * 2;
   const phi   = Math.acos(2 * Math.random() - 1);
   starPos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
-  starPos[i*3+1] = r * Math.abs(Math.sin(phi));   // hemisphere haut
+  starPos[i*3+1] = r * Math.abs(Math.sin(phi));
   starPos[i*3+2] = r * Math.sin(phi) * Math.sin(theta);
 }
 starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
 scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color:0xffeedd, size:0.35, transparent:true, opacity:.6 })));
 
-// Horizon rougeoyant (coucher de soleil lointain)
 const skyGeo = new THREE.SphereGeometry(280, 32, 16);
 const skyMat = new THREE.ShaderMaterial({
   side: THREE.BackSide,
@@ -241,42 +220,31 @@ const skyMat = new THREE.ShaderMaterial({
 });
 scene.add(new THREE.Mesh(skyGeo, skyMat));
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// LUMIERES â€” ambiance feu de bois la nuit
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- LUMIERES --
 scene.add(new THREE.AmbientLight(0x1a0800, 0.35));
 
-// Lumiere principale : comme une torche
 const fireLight = new THREE.PointLight(0xff6b20, 3.0, 30);
 fireLight.position.set(0, 0.6, 3);
 fireLight.castShadow = true;
 fireLight.shadow.mapSize.set(1024, 1024);
 scene.add(fireLight);
 
-// Lumiere de remplissage tres douce
 const rimLight = new THREE.DirectionalLight(0x3d1500, 0.4);
 rimLight.position.set(-8, 12, -6);
 scene.add(rimLight);
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// SOL â€” terre ocre africaine
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- SOL --
 const groundGeo = new THREE.PlaneGeometry(80, 80, 40, 40);
-// Legere ondulation du terrain
 const gPos = groundGeo.attributes.position;
 for (let i = 0; i < gPos.count; i++) {
   gPos.setZ(i, (Math.random()-0.5) * 0.18 + Math.sin(gPos.getX(i)*0.3)*0.08);
 }
 groundGeo.computeVertexNormals();
-const groundMat = new THREE.MeshStandardMaterial({
-  color: 0x6b3a10, roughness: 1, metalness: 0,
-});
-const ground = new THREE.Mesh(groundGeo, groundMat);
+const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color:0x6b3a10, roughness:1, metalness:0 }));
 ground.rotation.x = -Math.PI/2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-// Rochers/pierres disperses
 const rockMat = new THREE.MeshStandardMaterial({ color:0x4a2d0d, roughness:0.95 });
 for (let i = 0; i < 18; i++) {
   const r = 2 + Math.random() * 0.8;
@@ -290,9 +258,7 @@ for (let i = 0; i < 18; i++) {
   scene.add(rock);
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// PARTICULES â€” poussiere du Sahel + braises
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- PARTICULES --
 const dustCount = 800;
 const dustPos = new Float32Array(dustCount * 3);
 const dustVel = new Float32Array(dustCount * 3);
@@ -311,7 +277,6 @@ const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({
 }));
 scene.add(dust);
 
-// Braises montantes autour du feu
 const emberCount = 120;
 const emberPos = new Float32Array(emberCount * 3);
 const emberVel = new Float32Array(emberCount * 3);
@@ -330,9 +295,7 @@ const embers = new THREE.Points(emberGeo, new THREE.PointsMaterial({
 }));
 scene.add(embers);
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// FEU DE CAMP â€” geometrie simple
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- FEU DE CAMP --
 const logMat = new THREE.MeshStandardMaterial({ color:0x2a1005, roughness:1 });
 for (let i = 0; i < 4; i++) {
   const log = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,0.9,6), logMat);
@@ -343,99 +306,64 @@ for (let i = 0; i < 4; i++) {
   scene.add(log);
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// MODELE 3D â€” Takienta
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- MODELE 3D --
 let mainTower = null;
 let annotationsCreated = false;
 
-// Shader banco (argile) procedural
-const bancoMat = new THREE.MeshStandardMaterial({
-  color: 0xb5601a,
-  roughness: 0.92,
-  metalness: 0.0,
-});
-const roofMat = new THREE.MeshStandardMaterial({
-  color: 0x7a6030,
-  roughness: 1.0,
-  metalness: 0.0,
-});
-const doorMat = new THREE.MeshStandardMaterial({
-  color: 0x1a0800,
-  roughness: 0.8,
-});
+const bancoMat = new THREE.MeshStandardMaterial({ color:0xb5601a, roughness:0.92, metalness:0 });
+const roofMat  = new THREE.MeshStandardMaterial({ color:0x7a6030, roughness:1.0,  metalness:0 });
+const doorMat  = new THREE.MeshStandardMaterial({ color:0x1a0800, roughness:0.8 });
 
 function buildPlaceholder() {
   const g = new THREE.Group();
-
-  // Tour principale
   const mainGrp = new THREE.Group();
 
-  // Mur cylindrique 3 niveaux
   const base = new THREE.Mesh(new THREE.CylinderGeometry(1.35,1.55,1.4,20), bancoMat);
-  base.position.y = 0.7; base.castShadow = true; base.receiveShadow = true;
-  mainGrp.add(base);
+  base.position.y = 0.7; base.castShadow = true; base.receiveShadow = true; mainGrp.add(base);
 
   const mid = new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.38,1.6,20), bancoMat);
-  mid.position.y = 2.2; mid.castShadow = true; mid.receiveShadow = true;
-  mainGrp.add(mid);
+  mid.position.y = 2.2; mid.castShadow = true; mid.receiveShadow = true; mainGrp.add(mid);
 
   const top = new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.28,1.2,20), bancoMat);
-  top.position.y = 3.7; top.castShadow = true; top.receiveShadow = true;
-  mainGrp.add(top);
+  top.position.y = 3.7; top.castShadow = true; top.receiveShadow = true; mainGrp.add(top);
 
-  // Terrasse / rebord avant le toit
   const terr = new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.05,0.25,20), bancoMat);
-  terr.position.y = 4.42; terr.castShadow = true;
-  mainGrp.add(terr);
+  terr.position.y = 4.42; terr.castShadow = true; mainGrp.add(terr);
 
-  // Toit conique
   const roof = new THREE.Mesh(new THREE.ConeGeometry(1.55,2.2,20), roofMat);
-  roof.position.y = 5.65; roof.castShadow = true;
-  mainGrp.add(roof);
+  roof.position.y = 5.65; roof.castShadow = true; mainGrp.add(roof);
 
-  // Petite porte basse (entree qui oblige a se baisser)
   const door = new THREE.Mesh(new THREE.BoxGeometry(0.38,0.68,0.12), doorMat);
-  door.position.set(0,0.34,1.35);
-  mainGrp.add(door);
+  door.position.set(0,0.34,1.35); mainGrp.add(door);
 
-  // Petite fenetre sur le flanc
   const win = new THREE.Mesh(new THREE.BoxGeometry(0.18,0.18,0.12), doorMat);
-  win.position.set(1.3,2.5,0);
-  mainGrp.add(win);
+  win.position.set(1.3,2.5,0); mainGrp.add(win);
 
   mainTower = mainGrp;
   g.add(mainGrp);
 
-  // Tours secondaires (2 + 1 grenier)
-  const secondaryData = [
-    { x:-4.5, z:-2, scale:0.72, h:3.8 },
+  [
+    { x:-4.5, z:-2,   scale:0.72, h:3.8 },
     { x: 4.2, z:-2.5, scale:0.65, h:3.4 },
-    { x: 1.5, z:-5, scale:0.5, h:2.8 },
-  ];
-  secondaryData.forEach(d => {
+    { x: 1.5, z:-5,   scale:0.5,  h:2.8 },
+  ].forEach(d => {
     const sg = new THREE.Group();
     const sw = new THREE.Mesh(new THREE.CylinderGeometry(d.scale,d.scale*1.1,d.h,16), bancoMat);
     sw.position.y = d.h/2; sw.castShadow = true; sg.add(sw);
     const sr = new THREE.Mesh(new THREE.ConeGeometry(d.scale*1.15,d.h*0.4,16), roofMat);
     sr.position.y = d.h*1.18; sr.castShadow = true; sg.add(sr);
-    sg.position.set(d.x,0,d.z);
-    g.add(sg);
+    sg.position.set(d.x,0,d.z); g.add(sg);
   });
 
-  // Feux secondaires
-  const secFirePositions = [[-4.5,0,-2],[4.2,0,-2.5]];
-  secFirePositions.forEach(p => {
+  [[-4.5,0,-2],[4.2,0,-2.5]].forEach(p => {
     const fl = new THREE.PointLight(0xff5500, 1.2, 8);
-    fl.position.set(p[0]+0.5, 0.5, p[2]+0.8);
-    scene.add(fl);
+    fl.position.set(p[0]+0.5, 0.5, p[2]+0.8); scene.add(fl);
   });
 
   scene.add(g);
   return g;
 }
 
-// Charger GLB ou placeholder
 const dracoLdr = new DRACOLoader();
 dracoLdr.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
 const gltfLdr = new GLTFLoader();
@@ -450,17 +378,13 @@ gltfLdr.load('./assets/la-takienta.glb',
     const c = box.getCenter(new THREE.Vector3());
     m.position.set(-c.x*s, -box.min.y*s, -c.z*s);
     m.traverse(ch => { if(ch.isMesh){ ch.castShadow=true; ch.receiveShadow=true; } });
-    mainTower = m;
-    scene.add(m);
-    finishLoading();
+    mainTower = m; scene.add(m); finishLoading();
   },
   null,
   () => { buildPlaceholder(); finishLoading(); }
 );
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// SEQUENCE NARRATIVE
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- SEQUENCE NARRATIVE --
 const nt = document.getElementById('nt');
 function showText(html, duration) {
   return new Promise(resolve => {
@@ -479,11 +403,10 @@ async function runNarrative() {
   await delay(400);
   await showText("La terre qui se souvient.", 2800);
   await delay(300);
-  await showText("Pendant 400 ans, ils ont construit.<br>AprÃ¨s chaque saison de pluie. AprÃ¨s chaque raid.", 4000);
+  await showText("Pendant 400 ans, ils ont construit.<br>Apr\u00e8s chaque saison de pluie. Apr\u00e8s chaque raid.", 4000);
   await delay(400);
-  await showText("Ils n'ont pas bÃ¢ti un monument.<br>Ils ont rÃ©pondu Ã  la violence par l'architecture.", 4200);
+  await showText("Ils n\u2019ont pas b\u00e2ti un monument.<br>Ils ont r\u00e9pondu \u00e0 la violence par l\u2019architecture.", 4200);
   await delay(600);
-  // Afficher les annotations
   createAnnotations();
   document.getElementById('badge').style.opacity = '1';
   document.getElementById('locator').style.opacity = '1';
@@ -492,33 +415,31 @@ async function runNarrative() {
 
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// ANNOTATIONS â€” donnÃ©es culturelles rÃ©elles
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- ANNOTATIONS --
 const ANNOTATIONS = [
   {
     pos: new THREE.Vector3(0, 6.8, 0),
-    label: "Grenier sacrÃ©",
-    title: "Le grenier â€” Espace des ancÃªtres",
-    body: "Au sommet de la Takienta, les semences de mil sont gardÃ©es dans le grenier. Mais c'est aussi le lieu de communication avec les ancÃªtres. Les esprits montent par la tour comme une antenne vers le ciel. Monter dans la Takienta, c'est se rapprocher du sacrÃ©."
+    label: "Grenier sacr\u00e9",
+    title: "Le grenier \u2014 Espace des anc\u00eatres",
+    body: "Au sommet de la Takienta, les semences de mil sont gard\u00e9es dans le grenier. Mais c\u2019est aussi le lieu de communication avec les anc\u00eatres. Les esprits montent par la tour comme une antenne vers le ciel. Monter dans la Takienta, c\u2019est se rapprocher du sacr\u00e9."
   },
   {
     pos: new THREE.Vector3(1.6, 0.3, 0),
     label: "La porte basse",
-    title: "La porte â€” Acte d'humilitÃ© forcÃ©e",
-    body: "Cette porte est si petite qu'on doit s'agenouiller pour entrer. Ce n'est pas un hasard. Pendant des siÃ¨cles de raids esclavagistes, un ennemi armÃ© ne pouvait pas entrer l'arme levÃ©e. La contrainte physique est une stratÃ©gie de survie. L'architecture comme rÃ©sistance."
+    title: "La porte \u2014 Acte d\u2019humilit\u00e9 forc\u00e9e",
+    body: "Cette porte est si petite qu\u2019on doit s\u2019agenouiller pour entrer. Ce n\u2019est pas un hasard. Pendant des si\u00e8cles de raids esclavagistes, un ennemi arm\u00e9 ne pouvait pas entrer l\u2019arme lev\u00e9e. La contrainte physique est une strat\u00e9gie de survie. L\u2019architecture comme r\u00e9sistance."
   },
   {
     pos: new THREE.Vector3(-1.4, 2.5, 0.5),
     label: "Murs en banco",
-    title: "Les murs â€” Architecture fÃ©minine",
-    body: "40 cm d'Ã©paisseur d'argile, de paille et de bouse de vache. Ce sont les femmes Batammariba qui construisent et rÃ©parent ces murs avec leurs mains. La Takienta est un bÃ¢timent fÃ©minin. Sa soliditÃ© vient de leur savoir transmis de mÃ¨re en fille depuis des gÃ©nÃ©rations."
+    title: "Les murs \u2014 Architecture f\u00e9minine",
+    body: "40 cm d\u2019\u00e9paisseur d\u2019argile, de paille et de bouse de vache. Ce sont les femmes Batammariba qui construisent et r\u00e9parent ces murs avec leurs mains. La Takienta est un b\u00e2timent f\u00e9minin. Sa solidit\u00e9 vient de leur savoir transmis de m\u00e8re en fille depuis des g\u00e9n\u00e9rations."
   },
   {
     pos: new THREE.Vector3(0, 4.5, 1.5),
     label: "Terrasse de vie",
-    title: "La terrasse â€” Entre ciel et terre",
-    body: "La terrasse est le niveau des vivants : on y dort, on y cuisine, on observe le territoire Ã  360 degrÃ©s. C'est aussi un poste de surveillance. Dans la cosmologie Batammariba, ce niveau intermÃ©diaire est celui des humains â€” entre les animaux (bas) et les ancÃªtres (haut)."
+    title: "La terrasse \u2014 Entre ciel et terre",
+    body: "La terrasse est le niveau des vivants : on y dort, on y cuisine, on observe le territoire \u00e0 360 degr\u00e9s. C\u2019est aussi un poste de surveillance. Dans la cosmologie Batammariba, ce niveau interm\u00e9diaire est celui des humains \u2014 entre les animaux (bas) et les anc\u00eatres (haut)."
   },
 ];
 
@@ -544,39 +465,29 @@ function openDetail(title, body) {
 }
 window.closeDetail = () => document.getElementById('detail').classList.remove('open');
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// BOOT â†’ SCENE
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- BOOT --
 function finishLoading() {
   const boot = document.getElementById('boot');
-  // Explosion de la particule
   boot.style.opacity = '0';
   setTimeout(() => { boot.style.display = 'none'; runNarrative(); }, 1800);
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// BOUTONS
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- BOUTONS --
 let autoRot = true;
 document.getElementById('btn-rot').addEventListener('click', () => {
-  autoRot = !autoRot;
-  controls.autoRotate = autoRot;
+  autoRot = !autoRot; controls.autoRotate = autoRot;
 });
 document.getElementById('btn-reset').addEventListener('click', () => {
-  camera.position.set(12, 5, 16);
-  controls.target.set(0, 3, 0);
-  controls.update();
+  camera.position.set(12, 5, 16); controls.target.set(0, 3, 0); controls.update();
 });
 document.getElementById('btn-info').addEventListener('click', () => {
   openDetail(
-    'La Takienta â€” Koutammakou',
-    'Les tours Takienta sont les maisons-fortresses du peuple Batammariba au nord-est du Togo. Inscrites au Patrimoine Mondial de l\'UNESCO en 2004, elles abritent encore 50 000 personnes aujourd\'hui. Ce ne sont pas des ruines. C\'est une civilisation vivante.'
+    'La Takienta \u2014 Koutammakou',
+    'Les tours Takienta sont les maisons-fortresses du peuple Batammariba au nord-est du Togo. Inscrites au Patrimoine Mondial de l\u2019UNESCO en 2004, elles abritent encore 50\u202f000 personnes aujourd\u2019hui. Ce ne sont pas des ruines. C\u2019est une civilisation vivante.'
   );
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// BOUCLE D'ANIMATION
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- ANIMATION --
 const clock = new THREE.Clock();
 let frame = 0;
 
@@ -587,15 +498,12 @@ function animate() {
 
   controls.update();
 
-  // Scintillement du feu
   fireLight.intensity = 2.8 + Math.sin(t * 7.3) * 0.6 + Math.sin(t * 13.1) * 0.3;
   fireLight.position.x = Math.sin(t * 2.1) * 0.08;
   fireLight.position.z = 3 + Math.sin(t * 3.4) * 0.06;
 
-  // Gradient ciel dynamique (coucher de soleil tres lent)
   skyMat.uniforms.uTime.value = t;
 
-  // Poussiere (vent)
   if (frame % 2 === 0) {
     const dp = dustGeo.attributes.position;
     for (let i = 0; i < dustCount; i++) {
@@ -608,13 +516,12 @@ function animate() {
     dp.needsUpdate = true;
   }
 
-  // Braises montantes
   const ep = emberGeo.attributes.position;
   for (let i = 0; i < emberCount; i++) {
     ep.setX(i, ep.getX(i) + emberVel[i*3]   + Math.sin(t*3+i)*0.002);
     ep.setY(i, ep.getY(i) + emberVel[i*3+1]);
     ep.setZ(i, ep.getZ(i) + emberVel[i*3+2]);
-    if (ep.getY(i) > 6) { // Recycler la braise
+    if (ep.getY(i) > 6) {
       ep.setX(i, (Math.random()-0.5)*1.2);
       ep.setY(i, 0.1);
       ep.setZ(i, 2.5 + (Math.random()-0.5)*1.2);
@@ -627,9 +534,7 @@ function animate() {
 }
 animate();
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// RESPONSIVE
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- RESPONSIVE --
 window.addEventListener('resize', () => {
   const w = innerWidth, h = innerHeight;
   camera.aspect = w / h;
@@ -638,7 +543,6 @@ window.addEventListener('resize', () => {
   labelRdr.setSize(w, h);
 });
 
-// Gyroscope mobile
 if (window.DeviceOrientationEvent) {
   window.addEventListener('deviceorientation', e => {
     if (!e.beta) return;
