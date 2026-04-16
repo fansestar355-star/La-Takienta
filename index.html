@@ -1,250 +1,654 @@
 ﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>La Takienta - Experience WebAR</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #1a0a00; overflow: hidden; font-family: Georgia, serif; }
-    #canvas-container { width: 100vw; height: 100vh; position: relative; }
-    #loading-screen {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: linear-gradient(135deg, #1a0a00, #2d1200);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 100; color: #F4A460;
-    }
-    #loading-title { font-size: 2.5em; font-weight: bold; color: #F4A460; text-align: center; text-shadow: 0 0 20px #C1440E; margin-bottom: 10px; letter-spacing: 4px; }
-    #loading-subtitle { font-size: 0.9em; color: #8B4513; margin-bottom: 40px; text-align: center; }
-    #progress-bar-container { width: 280px; height: 3px; background: #3a2010; border-radius: 2px; }
-    #progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #C1440E, #F4A460); border-radius: 2px; transition: width 0.3s ease; }
-    #loading-percent { margin-top: 12px; font-size: 0.8em; color: #8B4513; }
-    #badge { position: fixed; top: 20px; left: 20px; background: rgba(10,5,0,0.85); border: 1px solid #8B4513; border-radius: 8px; padding: 8px 14px; color: #F4A460; font-size: 0.75em; letter-spacing: 1px; opacity: 0; transition: opacity 1s; pointer-events: none; backdrop-filter: blur(4px); }
-    #badge.visible { opacity: 1; }
-    #scene-text { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #F4A460; text-align: center; font-size: 1.8em; font-weight: bold; text-shadow: 0 0 30px #C1440E; opacity: 0; transition: opacity 0.8s; pointer-events: none; letter-spacing: 3px; }
-    #info-panel { position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(0deg, rgba(10,5,0,0.96) 0%, rgba(10,5,0,0.7) 80%, transparent 100%); padding: 30px 24px 24px; transform: translateY(100%); transition: transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94); color: #F4A460; }
-    #info-panel.visible { transform: translateY(0); }
-    #info-panel h2 { font-size: 1.3em; margin-bottom: 8px; letter-spacing: 1px; }
-    #info-panel p { font-size: 0.88em; color: #D2691E; line-height: 1.6; }
-    #info-close { position: absolute; top: 16px; right: 16px; background: none; border: 1px solid #8B4513; color: #F4A460; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1em; }
-    #controls { position: fixed; bottom: 30px; right: 20px; display: flex; flex-direction: column; gap: 12px; }
-    .ctrl-btn { width: 48px; height: 48px; background: rgba(193,68,14,0.85); border: none; border-radius: 50%; color: #FFF8DC; font-size: 1.2em; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(193,68,14,0.4); transition: transform 0.2s; backdrop-filter: blur(4px); }
-    .ctrl-btn:hover { transform: scale(1.1); }
-    .annotation { position: absolute; background: rgba(193,68,14,0.9); color: #FFF8DC; font-size: 0.73em; padding: 4px 10px; border-radius: 4px; pointer-events: none; white-space: nowrap; border-left: 3px solid #F4A460; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.5s; }
-    .annotation.visible { opacity: 1; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>La Takienta â€” Koutammakou</title>
+<style>
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; background:#000; overflow:hidden; }
+  canvas { display:block; }
+
+  /* â”€â”€ LOADING â”€â”€ */
+  #boot {
+    position:fixed; inset:0; background:#000;
+    display:flex; align-items:center; justify-content:center;
+    z-index:200; transition:opacity 1.8s ease;
+  }
+  #boot-particle {
+    width:4px; height:4px; border-radius:50%;
+    background:#c1440e; box-shadow:0 0 12px 4px #c1440e88;
+    animation:fall 2s ease-in infinite;
+  }
+  @keyframes fall { 0%{transform:translateY(-60px);opacity:0} 60%{opacity:1} 100%{transform:translateY(60px);opacity:0} }
+
+  /* â”€â”€ CANVAS CONTAINER â”€â”€ */
+  #app { position:fixed; inset:0; }
+
+  /* â”€â”€ TEXTES NARRATIFS CSS â”€â”€ */
+  #narrative {
+    position:fixed; inset:0; pointer-events:none; z-index:10;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .n-text {
+    font-family:'Georgia',serif; color:#ffe4b5; text-align:center;
+    font-size:clamp(1rem,2.5vw,1.4rem); line-height:1.8;
+    max-width:640px; padding:0 24px;
+    opacity:0; transform:translateY(8px);
+    transition:opacity 1.4s ease, transform 1.4s ease;
+    text-shadow:0 2px 20px rgba(0,0,0,.9), 0 0 40px rgba(193,68,14,.3);
+  }
+  .n-text.show { opacity:1; transform:translateY(0); }
+  .n-text em { font-style:italic; color:#f4a460; }
+
+  /* â”€â”€ SOUS-TITRE LOCATIF â”€â”€ */
+  #locator {
+    position:fixed; top:24px; left:50%; transform:translateX(-50%);
+    color:#8b4513; font-family:Georgia,serif; font-size:.75rem;
+    letter-spacing:.2em; text-transform:uppercase;
+    opacity:0; transition:opacity 2s;
+    pointer-events:none;
+  }
+
+  /* â”€â”€ ANNOTATIONS 3D â”€â”€ */
+  .ann {
+    font-family:Georgia,serif; font-size:.78rem;
+    color:#ffe4b5; pointer-events:all; cursor:pointer;
+    border-left:2px solid #c1440e; padding:4px 10px;
+    background:rgba(10,5,0,.75); backdrop-filter:blur(6px);
+    opacity:0; transition:opacity .8s; white-space:nowrap;
+    max-width:220px; white-space:normal; line-height:1.4;
+  }
+  .ann.show { opacity:1; }
+  .ann:hover { color:#f4a460; border-color:#f4a460; }
+
+  /* â”€â”€ PANEL DETAIL â”€â”€ */
+  #detail {
+    position:fixed; bottom:0; left:0; right:0; z-index:20;
+    background:linear-gradient(0deg,rgba(5,2,0,.97) 0%,rgba(5,2,0,.8) 70%,transparent);
+    padding:36px 28px 28px; color:#ffe4b5;
+    font-family:Georgia,serif;
+    transform:translateY(100%); transition:transform .55s cubic-bezier(.4,0,.2,1);
+  }
+  #detail.open { transform:translateY(0); }
+  #detail h3 { font-size:1.15rem; margin-bottom:10px; color:#f4a460; letter-spacing:.05em; }
+  #detail p  { font-size:.88rem; line-height:1.75; color:#d2b48c; max-width:600px; }
+  #detail-close {
+    position:absolute; top:14px; right:18px;
+    background:none; border:1px solid #5a3010; color:#ffe4b5;
+    width:30px; height:30px; border-radius:50%; cursor:pointer;
+    font-size:.85rem; display:flex; align-items:center; justify-content:center;
+  }
+
+  /* â”€â”€ CONTROLS â”€â”€ */
+  #ctrl {
+    position:fixed; bottom:28px; right:20px;
+    display:flex; flex-direction:column; gap:10px; z-index:15;
+  }
+  .cb {
+    width:44px; height:44px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(193,68,14,.8); color:#ffe8cc;
+    font-size:1.1rem; display:flex; align-items:center; justify-content:center;
+    backdrop-filter:blur(6px); box-shadow:0 4px 16px rgba(193,68,14,.35);
+    transition:transform .2s, background .2s; opacity:0; pointer-events:none;
+  }
+  .cb.ready { opacity:1; pointer-events:all; }
+  .cb:hover { transform:scale(1.1); background:rgba(244,164,96,.85); }
+
+  /* â”€â”€ BADGE UNESCO â”€â”€ */
+  #badge {
+    position:fixed; top:20px; left:20px; z-index:15;
+    background:rgba(5,2,0,.82); border:1px solid #5a3010; border-radius:6px;
+    padding:7px 14px; color:#f4a460; font-family:Georgia,serif;
+    font-size:.7rem; letter-spacing:.12em; text-transform:uppercase;
+    opacity:0; transition:opacity 1.5s; pointer-events:none;
+    backdrop-filter:blur(6px);
+  }
+
+  /* â”€â”€ CURSEUR BRAISE â”€â”€ */
+  #cursor {
+    position:fixed; width:8px; height:8px; border-radius:50%;
+    background:#c1440e; box-shadow:0 0 10px 3px #c1440e88;
+    pointer-events:none; z-index:999; transform:translate(-50%,-50%);
+    transition:width .15s, height .15s, opacity .3s; opacity:0;
+  }
+  body:hover #cursor { opacity:1; }
+</style>
 </head>
 <body>
-<div id="loading-screen">
-  <div id="loading-title">LA TAKIENTA</div>
-  <div id="loading-subtitle">Koutammakou - Patrimoine UNESCO - Togo</div>
-  <div id="progress-bar-container"><div id="progress-bar"></div></div>
-  <div id="loading-percent">Chargement...</div>
+
+<div id="boot"><div id="boot-particle"></div></div>
+<div id="app"></div>
+<div id="badge">Koutammakou &mdash; UNESCO 2004</div>
+<div id="locator">Koutammakou &bull; Nord-Est Togo</div>
+<div id="narrative"><p class="n-text" id="nt"></p></div>
+
+<div id="detail">
+  <button id="detail-close" onclick="closeDetail()">&#215;</button>
+  <h3 id="d-title"></h3>
+  <p id="d-body"></p>
 </div>
-<div id="canvas-container"></div>
-<div id="badge">Patrimoine UNESCO 2004</div>
-<div id="scene-text"></div>
-<div id="info-panel">
-  <button id="info-close" onclick="fermerInfo()">x</button>
-  <h2 id="info-titre">La Takienta</h2>
-  <p id="info-contenu">Les tours Takienta sont les maisons-fortresses du peuple Batammariba. Chaque tour symbolise l univers : niveau bas pour les animaux, niveau moyen pour les vivants, toit pour les ancetres. Inscrites au Patrimoine UNESCO en 2004.</p>
+
+<div id="ctrl">
+  <button class="cb" id="btn-rot" title="Rotation auto">&#8635;</button>
+  <button class="cb" id="btn-reset" title="Vue initiale">&#8962;</button>
+  <button class="cb" id="btn-info" title="A propos">&#9432;</button>
 </div>
-<div id="controls">
-  <button class="ctrl-btn" onclick="toggleRotation()" title="Rotation">o</button>
-  <button class="ctrl-btn" onclick="resetCamera()" title="Reset">H</button>
-  <button class="ctrl-btn" onclick="afficherInfo()" title="Info">i</button>
-</div>
-<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+
+<div id="cursor"></div>
+
+<script type="importmap">
+{"imports":{
+  "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
 <script type="module">
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { Sky } from 'three/addons/objects/Sky.js';
+import { OrbitControls }    from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader }       from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader }      from 'three/addons/loaders/DRACOLoader.js';
+import { Sky }              from 'three/addons/objects/Sky.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x1a0a00, 0.008);
-const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
-camera.position.set(8, 4, 12);
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// CURSEUR PERSONNALISE
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const cur = document.getElementById('cursor');
+document.addEventListener('mousemove', e => {
+  cur.style.left = e.clientX + 'px';
+  cur.style.top  = e.clientY + 'px';
+});
+document.body.style.cursor = 'none';
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// SCENE
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const W = innerWidth, H = innerHeight;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(innerWidth, innerHeight);
+renderer.setSize(W, H);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.8;
-document.getElementById('canvas-container').appendChild(renderer.domElement);
+renderer.toneMappingExposure = 0.6;  // Sombre et chaleureux
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.getElementById('app').appendChild(renderer.domElement);
 
-const labelRenderer = new CSS2DRenderer();
-labelRenderer.setSize(innerWidth, innerHeight);
-labelRenderer.domElement.style.cssText = 'position:absolute;top:0;pointer-events:none;';
-document.getElementById('canvas-container').appendChild(labelRenderer.domElement);
+const labelRdr = new CSS2DRenderer();
+labelRdr.setSize(W, H);
+Object.assign(labelRdr.domElement.style, { position:'absolute', top:'0', pointerEvents:'none' });
+document.getElementById('app').appendChild(labelRdr.domElement);
 
+const scene = new THREE.Scene();
+// Brume chaude epaisse : on emerge de la chaleur
+scene.fog = new THREE.FogExp2(0x1a0800, 0.006);
+scene.background = new THREE.Color(0x050200);
+
+const camera = new THREE.PerspectiveCamera(55, W/H, 0.1, 600);
+camera.position.set(12, 5, 16);
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// CONTROLES â€” rotation douce autour de la tour
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-controls.minDistance = 3;
-controls.maxDistance = 30;
-controls.maxPolarAngle = Math.PI * 0.85;
-controls.target.set(0, 2, 0);
+controls.dampingFactor = 0.04;
+controls.minDistance  = 4;
+controls.maxDistance  = 35;
+controls.maxPolarAngle = Math.PI * 0.82;
+controls.target.set(0, 3, 0);
 controls.autoRotate = true;
-controls.autoRotateSpeed = 0.4;
+controls.autoRotateSpeed = 0.25;
 
-const sky = new Sky();
-sky.scale.setScalar(450000);
-scene.add(sky);
-const skyU = sky.material.uniforms;
-skyU['turbidity'].value = 8;
-skyU['rayleigh'].value = 1.5;
-skyU['mieCoefficient'].value = 0.005;
-skyU['mieDirectionalG'].value = 0.82;
-const sunVec = new THREE.Vector3();
-sunVec.setFromSphericalCoords(1, THREE.MathUtils.degToRad(75), THREE.MathUtils.degToRad(210));
-skyU['sunPosition'].value.copy(sunVec);
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// CIEL NUIT AFRICAINE
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Etoiles
+const starGeo = new THREE.BufferGeometry();
+const starPos = new Float32Array(4000 * 3);
+for (let i = 0; i < 4000; i++) {
+  const r = 280;
+  const theta = Math.random() * Math.PI * 2;
+  const phi   = Math.acos(2 * Math.random() - 1);
+  starPos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+  starPos[i*3+1] = r * Math.abs(Math.sin(phi));   // hemisphere haut
+  starPos[i*3+2] = r * Math.sin(phi) * Math.sin(theta);
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color:0xffeedd, size:0.35, transparent:true, opacity:.6 })));
 
-scene.add(new THREE.AmbientLight(0x8B4513, 0.4));
-const sunLight = new THREE.DirectionalLight(0xFFD89B, 1.2);
-sunLight.position.set(10, 20, 5);
-sunLight.castShadow = true;
-sunLight.shadow.mapSize.set(2048, 2048);
-sunLight.shadow.camera.left = -20; sunLight.shadow.camera.right = 20;
-sunLight.shadow.camera.top = 20; sunLight.shadow.camera.bottom = -20;
-scene.add(sunLight);
-const fill = new THREE.DirectionalLight(0xFF6B35, 0.3);
-fill.position.set(-5, 3, -5);
-scene.add(fill);
+// Horizon rougeoyant (coucher de soleil lointain)
+const skyGeo = new THREE.SphereGeometry(280, 32, 16);
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  uniforms: { uTime: { value:0 } },
+  vertexShader: `
+    varying vec3 vPos;
+    void main(){ vPos=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }
+  `,
+  fragmentShader: `
+    varying vec3 vPos;
+    void main(){
+      float h = normalize(vPos).y;
+      vec3 night  = vec3(0.01,0.005,0.0);
+      vec3 horizon= vec3(0.25,0.06,0.01);
+      vec3 col = mix(horizon, night, smoothstep(-0.05,0.35,h));
+      gl_FragColor = vec4(col,1.);
+    }
+  `
+});
+scene.add(new THREE.Mesh(skyGeo, skyMat));
 
-const groundGeo = new THREE.PlaneGeometry(60, 60, 20, 20);
-const pAttr = groundGeo.attributes.position;
-for (let i = 0; i < pAttr.count; i++) pAttr.setZ(i, (Math.random()-0.5)*0.15);
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// LUMIERES â€” ambiance feu de bois la nuit
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+scene.add(new THREE.AmbientLight(0x1a0800, 0.35));
+
+// Lumiere principale : comme une torche
+const fireLight = new THREE.PointLight(0xff6b20, 3.0, 30);
+fireLight.position.set(0, 0.6, 3);
+fireLight.castShadow = true;
+fireLight.shadow.mapSize.set(1024, 1024);
+scene.add(fireLight);
+
+// Lumiere de remplissage tres douce
+const rimLight = new THREE.DirectionalLight(0x3d1500, 0.4);
+rimLight.position.set(-8, 12, -6);
+scene.add(rimLight);
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// SOL â€” terre ocre africaine
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const groundGeo = new THREE.PlaneGeometry(80, 80, 40, 40);
+// Legere ondulation du terrain
+const gPos = groundGeo.attributes.position;
+for (let i = 0; i < gPos.count; i++) {
+  gPos.setZ(i, (Math.random()-0.5) * 0.18 + Math.sin(gPos.getX(i)*0.3)*0.08);
+}
 groundGeo.computeVertexNormals();
-const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color: 0x8B6914, roughness: 0.95 }));
+const groundMat = new THREE.MeshStandardMaterial({
+  color: 0x6b3a10, roughness: 1, metalness: 0,
+});
+const ground = new THREE.Mesh(groundGeo, groundMat);
 ground.rotation.x = -Math.PI/2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-const dummy = new THREE.Object3D();
-const grassMesh = new THREE.InstancedMesh(new THREE.ConeGeometry(0.02,0.3,3), new THREE.MeshStandardMaterial({color:0x8B7355,roughness:1}), 300);
-for (let i = 0; i < 300; i++) {
-  const x = (Math.random()-0.5)*40, z = (Math.random()-0.5)*40;
-  if (Math.abs(x)>4||Math.abs(z)>4) { dummy.position.set(x,0.15,z); dummy.rotation.set((Math.random()-0.5)*0.3,0,(Math.random()-0.5)*0.3); dummy.updateMatrix(); grassMesh.setMatrixAt(i,dummy.matrix); }
+// Rochers/pierres disperses
+const rockMat = new THREE.MeshStandardMaterial({ color:0x4a2d0d, roughness:0.95 });
+for (let i = 0; i < 18; i++) {
+  const r = 2 + Math.random() * 0.8;
+  const geo = new THREE.DodecahedronGeometry(r * (0.08 + Math.random()*0.15), 0);
+  const rock = new THREE.Mesh(geo, rockMat);
+  const angle = Math.random() * Math.PI * 2;
+  const dist  = 8 + Math.random() * 22;
+  rock.position.set(Math.cos(angle)*dist, 0, Math.sin(angle)*dist);
+  rock.rotation.set(Math.random()*2, Math.random()*2, Math.random()*2);
+  rock.castShadow = true;
+  scene.add(rock);
 }
-scene.add(grassMesh);
 
-const particleGeo = new THREE.BufferGeometry();
-const pPos = new Float32Array(500*3);
-for (let i = 0; i < 500; i++) { pPos[i*3]=(Math.random()-0.5)*30; pPos[i*3+1]=Math.random()*10; pPos[i*3+2]=(Math.random()-0.5)*30; }
-particleGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-const particles = new THREE.Points(particleGeo, new THREE.PointsMaterial({color:0xD2691E,size:0.06,transparent:true,opacity:0.4}));
-scene.add(particles);
-
-let modele = null;
-const annotations_data = [
-  { nom: "Grenier", pos: new THREE.Vector3(0, 4.5, 0), info: "Stockage du mil et des semences. Protege par les esprits ancestraux." },
-  { nom: "Autel", pos: new THREE.Vector3(0, 0.8, 0), info: "Lieu sacre de communication avec les ancetres." },
-  { nom: "Terrasse", pos: new THREE.Vector3(0, 3.2, 0), info: "Espace de vie et de surveillance du village." },
-  { nom: "Toit conique", pos: new THREE.Vector3(0, 6, 0), info: "Chaume renouvele tous les 3 ans en communaute." },
-];
-
-function majChargement(pct, msg) {
-  document.getElementById('progress-bar').style.width = pct+'%';
-  document.getElementById('loading-percent').textContent = msg;
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// PARTICULES â€” poussiere du Sahel + braises
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const dustCount = 800;
+const dustPos = new Float32Array(dustCount * 3);
+const dustVel = new Float32Array(dustCount * 3);
+for (let i = 0; i < dustCount; i++) {
+  dustPos[i*3]   = (Math.random()-0.5)*50;
+  dustPos[i*3+1] = Math.random()*12;
+  dustPos[i*3+2] = (Math.random()-0.5)*50;
+  dustVel[i*3]   = (Math.random()-0.5)*0.008;
+  dustVel[i*3+1] = (Math.random()-0.5)*0.003;
+  dustVel[i*3+2] = (Math.random()-0.5)*0.006;
 }
-majChargement(10,'Preparation...');
-setTimeout(()=>majChargement(30,'Terrain...'),300);
-setTimeout(()=>majChargement(60,'Modele 3D...'),800);
+const dustGeo = new THREE.BufferGeometry();
+dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({
+  color:0xc1440e, size:0.07, transparent:true, opacity:0.35, depthWrite:false
+}));
+scene.add(dust);
 
-const draco = new DRACOLoader();
-draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-const loader = new GLTFLoader();
-loader.setDRACOLoader(draco);
-loader.load('./assets/la-takienta.glb',
-  (gltf) => {
-    modele = gltf.scene;
-    const box = new THREE.Box3().setFromObject(modele);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const s = 5/Math.max(size.x,size.y,size.z);
-    modele.scale.setScalar(s);
-    modele.position.set(-center.x*s,-box.min.y*s,-center.z*s);
-    modele.traverse(c => { if(c.isMesh){ c.castShadow=true; c.receiveShadow=true; } });
-    modele.position.y -= 8;
-    scene.add(modele);
-    majChargement(100,'Pret !');
-    masquerChargement();
-    emerger();
+// Braises montantes autour du feu
+const emberCount = 120;
+const emberPos = new Float32Array(emberCount * 3);
+const emberVel = new Float32Array(emberCount * 3);
+for (let i = 0; i < emberCount; i++) {
+  emberPos[i*3]   = (Math.random()-0.5)*1.5;
+  emberPos[i*3+1] = Math.random()*0.5;
+  emberPos[i*3+2] = 2.5 + (Math.random()-0.5)*1.5;
+  emberVel[i*3]   = (Math.random()-0.5)*0.02;
+  emberVel[i*3+1] = 0.015 + Math.random()*0.025;
+  emberVel[i*3+2] = (Math.random()-0.5)*0.01;
+}
+const emberGeo = new THREE.BufferGeometry();
+emberGeo.setAttribute('position', new THREE.BufferAttribute(emberPos, 3));
+const embers = new THREE.Points(emberGeo, new THREE.PointsMaterial({
+  color:0xff8c00, size:0.12, transparent:true, opacity:0.85, depthWrite:false
+}));
+scene.add(embers);
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// FEU DE CAMP â€” geometrie simple
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const logMat = new THREE.MeshStandardMaterial({ color:0x2a1005, roughness:1 });
+for (let i = 0; i < 4; i++) {
+  const log = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,0.9,6), logMat);
+  const a = (i/4)*Math.PI*2;
+  log.position.set(Math.cos(a)*0.4, 0, 2.5+Math.sin(a)*0.25);
+  log.rotation.z = Math.PI/2;
+  log.rotation.y = a;
+  scene.add(log);
+}
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// MODELE 3D â€” Takienta
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+let mainTower = null;
+let annotationsCreated = false;
+
+// Shader banco (argile) procedural
+const bancoMat = new THREE.MeshStandardMaterial({
+  color: 0xb5601a,
+  roughness: 0.92,
+  metalness: 0.0,
+});
+const roofMat = new THREE.MeshStandardMaterial({
+  color: 0x7a6030,
+  roughness: 1.0,
+  metalness: 0.0,
+});
+const doorMat = new THREE.MeshStandardMaterial({
+  color: 0x1a0800,
+  roughness: 0.8,
+});
+
+function buildPlaceholder() {
+  const g = new THREE.Group();
+
+  // Tour principale
+  const mainGrp = new THREE.Group();
+
+  // Mur cylindrique 3 niveaux
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(1.35,1.55,1.4,20), bancoMat);
+  base.position.y = 0.7; base.castShadow = true; base.receiveShadow = true;
+  mainGrp.add(base);
+
+  const mid = new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.38,1.6,20), bancoMat);
+  mid.position.y = 2.2; mid.castShadow = true; mid.receiveShadow = true;
+  mainGrp.add(mid);
+
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.28,1.2,20), bancoMat);
+  top.position.y = 3.7; top.castShadow = true; top.receiveShadow = true;
+  mainGrp.add(top);
+
+  // Terrasse / rebord avant le toit
+  const terr = new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.05,0.25,20), bancoMat);
+  terr.position.y = 4.42; terr.castShadow = true;
+  mainGrp.add(terr);
+
+  // Toit conique
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(1.55,2.2,20), roofMat);
+  roof.position.y = 5.65; roof.castShadow = true;
+  mainGrp.add(roof);
+
+  // Petite porte basse (entree qui oblige a se baisser)
+  const door = new THREE.Mesh(new THREE.BoxGeometry(0.38,0.68,0.12), doorMat);
+  door.position.set(0,0.34,1.35);
+  mainGrp.add(door);
+
+  // Petite fenetre sur le flanc
+  const win = new THREE.Mesh(new THREE.BoxGeometry(0.18,0.18,0.12), doorMat);
+  win.position.set(1.3,2.5,0);
+  mainGrp.add(win);
+
+  mainTower = mainGrp;
+  g.add(mainGrp);
+
+  // Tours secondaires (2 + 1 grenier)
+  const secondaryData = [
+    { x:-4.5, z:-2, scale:0.72, h:3.8 },
+    { x: 4.2, z:-2.5, scale:0.65, h:3.4 },
+    { x: 1.5, z:-5, scale:0.5, h:2.8 },
+  ];
+  secondaryData.forEach(d => {
+    const sg = new THREE.Group();
+    const sw = new THREE.Mesh(new THREE.CylinderGeometry(d.scale,d.scale*1.1,d.h,16), bancoMat);
+    sw.position.y = d.h/2; sw.castShadow = true; sg.add(sw);
+    const sr = new THREE.Mesh(new THREE.ConeGeometry(d.scale*1.15,d.h*0.4,16), roofMat);
+    sr.position.y = d.h*1.18; sr.castShadow = true; sg.add(sr);
+    sg.position.set(d.x,0,d.z);
+    g.add(sg);
+  });
+
+  // Feux secondaires
+  const secFirePositions = [[-4.5,0,-2],[4.2,0,-2.5]];
+  secFirePositions.forEach(p => {
+    const fl = new THREE.PointLight(0xff5500, 1.2, 8);
+    fl.position.set(p[0]+0.5, 0.5, p[2]+0.8);
+    scene.add(fl);
+  });
+
+  scene.add(g);
+  return g;
+}
+
+// Charger GLB ou placeholder
+const dracoLdr = new DRACOLoader();
+dracoLdr.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+const gltfLdr = new GLTFLoader();
+gltfLdr.setDRACOLoader(dracoLdr);
+
+gltfLdr.load('./assets/la-takienta.glb',
+  gltf => {
+    const m = gltf.scene;
+    const box = new THREE.Box3().setFromObject(m);
+    const s = 5.5 / Math.max(...box.getSize(new THREE.Vector3()).toArray());
+    m.scale.setScalar(s);
+    const c = box.getCenter(new THREE.Vector3());
+    m.position.set(-c.x*s, -box.min.y*s, -c.z*s);
+    m.traverse(ch => { if(ch.isMesh){ ch.castShadow=true; ch.receiveShadow=true; } });
+    mainTower = m;
+    scene.add(m);
+    finishLoading();
   },
-  (xhr) => { if(xhr.total>0) majChargement(60+(xhr.loaded/xhr.total*30|0), 'Modele...'); },
-  () => { majChargement(100,'Pret !'); masquerChargement(); creerPlaceholder(); setTimeout(()=>{afficherTexteScene('Koutammakou',3000); document.getElementById('badge').classList.add('visible'); creerAnnotations();},2000); }
+  null,
+  () => { buildPlaceholder(); finishLoading(); }
 );
 
-function emerger() {
-  const target = modele.position.y + 8;
-  let spd = 0.05;
-  function step() {
-    if (modele.position.y < target) { modele.position.y += spd; spd = Math.min(spd*1.02, 0.15); requestAnimationFrame(step); }
-    else { modele.position.y = target; afficherTexteScene('Koutammakou',3000); setTimeout(()=>{ document.getElementById('badge').classList.add('visible'); creerAnnotations(); },4000); }
-  }
-  step();
-}
-
-function creerPlaceholder() {
-  const g = new THREE.Group();
-  const murMat = new THREE.MeshStandardMaterial({color:0xC1440E,roughness:0.9});
-  const toitMat = new THREE.MeshStandardMaterial({color:0x8B7355,roughness:1});
-  const mur = new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.4,4,16), murMat);
-  mur.position.y=2; mur.castShadow=true; g.add(mur);
-  const toit = new THREE.Mesh(new THREE.ConeGeometry(1.6,2,16), toitMat);
-  toit.position.y=5; toit.castShadow=true; g.add(toit);
-  const porte = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.8,0.1), new THREE.MeshStandardMaterial({color:0x3D1C02}));
-  porte.position.set(0,0.4,1.35); g.add(porte);
-  for(let i=0;i<3;i++){const a=(i/3)*Math.PI*2+Math.PI/6;const tg=new THREE.Group();const m=new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.85,3,12),murMat);m.position.y=1.5;m.castShadow=true;tg.add(m);const t=new THREE.Mesh(new THREE.ConeGeometry(0.95,1.5,12),toitMat);t.position.y=3.75;t.castShadow=true;tg.add(t);tg.position.set(Math.cos(a)*4.5,0,Math.sin(a)*4.5);g.add(tg);}
-  modele=g; scene.add(g);
-}
-
-function creerAnnotations() {
-  annotations_data.forEach(d => {
-    const div = document.createElement('div');
-    div.className='annotation'; div.textContent=d.nom;
-    div.addEventListener('pointerdown',()=>{ document.getElementById('info-titre').textContent=d.nom; document.getElementById('info-contenu').textContent=d.info; document.getElementById('info-panel').classList.add('visible'); });
-    const lbl = new CSS2DObject(div);
-    lbl.position.copy(d.pos); scene.add(lbl);
-    setTimeout(()=>div.classList.add('visible'),500);
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// SEQUENCE NARRATIVE
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const nt = document.getElementById('nt');
+function showText(html, duration) {
+  return new Promise(resolve => {
+    nt.innerHTML = html;
+    nt.classList.add('show');
+    setTimeout(() => {
+      nt.classList.remove('show');
+      setTimeout(resolve, 1400);
+    }, duration);
   });
 }
 
-function afficherTexteScene(txt,dur) {
-  const el=document.getElementById('scene-text');
-  el.textContent=txt; el.style.opacity='1';
-  setTimeout(()=>el.style.opacity='0',dur);
+async function runNarrative() {
+  await delay(800);
+  await showText("Ils appelaient cet endroit <em>Koutammakou</em>.", 3200);
+  await delay(400);
+  await showText("La terre qui se souvient.", 2800);
+  await delay(300);
+  await showText("Pendant 400 ans, ils ont construit.<br>AprÃ¨s chaque saison de pluie. AprÃ¨s chaque raid.", 4000);
+  await delay(400);
+  await showText("Ils n'ont pas bÃ¢ti un monument.<br>Ils ont rÃ©pondu Ã  la violence par l'architecture.", 4200);
+  await delay(600);
+  // Afficher les annotations
+  createAnnotations();
+  document.getElementById('badge').style.opacity = '1';
+  document.getElementById('locator').style.opacity = '1';
+  document.querySelectorAll('.cb').forEach(b => b.classList.add('ready'));
 }
 
-function masquerChargement() {
-  const s=document.getElementById('loading-screen');
-  s.style.transition='opacity 1s'; s.style.opacity='0';
-  setTimeout(()=>s.style.display='none',1000);
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ANNOTATIONS â€” donnÃ©es culturelles rÃ©elles
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const ANNOTATIONS = [
+  {
+    pos: new THREE.Vector3(0, 6.8, 0),
+    label: "Grenier sacrÃ©",
+    title: "Le grenier â€” Espace des ancÃªtres",
+    body: "Au sommet de la Takienta, les semences de mil sont gardÃ©es dans le grenier. Mais c'est aussi le lieu de communication avec les ancÃªtres. Les esprits montent par la tour comme une antenne vers le ciel. Monter dans la Takienta, c'est se rapprocher du sacrÃ©."
+  },
+  {
+    pos: new THREE.Vector3(1.6, 0.3, 0),
+    label: "La porte basse",
+    title: "La porte â€” Acte d'humilitÃ© forcÃ©e",
+    body: "Cette porte est si petite qu'on doit s'agenouiller pour entrer. Ce n'est pas un hasard. Pendant des siÃ¨cles de raids esclavagistes, un ennemi armÃ© ne pouvait pas entrer l'arme levÃ©e. La contrainte physique est une stratÃ©gie de survie. L'architecture comme rÃ©sistance."
+  },
+  {
+    pos: new THREE.Vector3(-1.4, 2.5, 0.5),
+    label: "Murs en banco",
+    title: "Les murs â€” Architecture fÃ©minine",
+    body: "40 cm d'Ã©paisseur d'argile, de paille et de bouse de vache. Ce sont les femmes Batammariba qui construisent et rÃ©parent ces murs avec leurs mains. La Takienta est un bÃ¢timent fÃ©minin. Sa soliditÃ© vient de leur savoir transmis de mÃ¨re en fille depuis des gÃ©nÃ©rations."
+  },
+  {
+    pos: new THREE.Vector3(0, 4.5, 1.5),
+    label: "Terrasse de vie",
+    title: "La terrasse â€” Entre ciel et terre",
+    body: "La terrasse est le niveau des vivants : on y dort, on y cuisine, on observe le territoire Ã  360 degrÃ©s. C'est aussi un poste de surveillance. Dans la cosmologie Batammariba, ce niveau intermÃ©diaire est celui des humains â€” entre les animaux (bas) et les ancÃªtres (haut)."
+  },
+];
+
+function createAnnotations() {
+  if (annotationsCreated) return;
+  annotationsCreated = true;
+  ANNOTATIONS.forEach(data => {
+    const div = document.createElement('div');
+    div.className = 'ann';
+    div.textContent = data.label;
+    div.addEventListener('pointerdown', () => openDetail(data.title, data.body));
+    const obj = new CSS2DObject(div);
+    obj.position.copy(data.pos);
+    scene.add(obj);
+    setTimeout(() => div.classList.add('show'), 500 + Math.random()*1200);
+  });
 }
 
+function openDetail(title, body) {
+  document.getElementById('d-title').textContent = title;
+  document.getElementById('d-body').textContent = body;
+  document.getElementById('detail').classList.add('open');
+}
+window.closeDetail = () => document.getElementById('detail').classList.remove('open');
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// BOOT â†’ SCENE
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function finishLoading() {
+  const boot = document.getElementById('boot');
+  // Explosion de la particule
+  boot.style.opacity = '0';
+  setTimeout(() => { boot.style.display = 'none'; runNarrative(); }, 1800);
+}
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// BOUTONS
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+let autoRot = true;
+document.getElementById('btn-rot').addEventListener('click', () => {
+  autoRot = !autoRot;
+  controls.autoRotate = autoRot;
+});
+document.getElementById('btn-reset').addEventListener('click', () => {
+  camera.position.set(12, 5, 16);
+  controls.target.set(0, 3, 0);
+  controls.update();
+});
+document.getElementById('btn-info').addEventListener('click', () => {
+  openDetail(
+    'La Takienta â€” Koutammakou',
+    'Les tours Takienta sont les maisons-fortresses du peuple Batammariba au nord-est du Togo. Inscrites au Patrimoine Mondial de l\'UNESCO en 2004, elles abritent encore 50 000 personnes aujourd\'hui. Ce ne sont pas des ruines. C\'est une civilisation vivante.'
+  );
+});
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// BOUCLE D'ANIMATION
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const clock = new THREE.Clock();
+let frame = 0;
+
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
+  frame++;
+
   controls.update();
-  const pp = particles.geometry.attributes.position;
-  for(let i=0;i<500;i++){pp.setX(i,pp.getX(i)+0.003);pp.setY(i,pp.getY(i)+Math.sin(t+i)*0.001);if(pp.getX(i)>15)pp.setX(i,-15);}
-  pp.needsUpdate=true;
-  renderer.render(scene,camera);
-  labelRenderer.render(scene,camera);
+
+  // Scintillement du feu
+  fireLight.intensity = 2.8 + Math.sin(t * 7.3) * 0.6 + Math.sin(t * 13.1) * 0.3;
+  fireLight.position.x = Math.sin(t * 2.1) * 0.08;
+  fireLight.position.z = 3 + Math.sin(t * 3.4) * 0.06;
+
+  // Gradient ciel dynamique (coucher de soleil tres lent)
+  skyMat.uniforms.uTime.value = t;
+
+  // Poussiere (vent)
+  if (frame % 2 === 0) {
+    const dp = dustGeo.attributes.position;
+    for (let i = 0; i < dustCount; i++) {
+      dp.setX(i, dp.getX(i) + dustVel[i*3]   + 0.005);
+      dp.setY(i, dp.getY(i) + dustVel[i*3+1] + Math.sin(t*0.5+i)*0.001);
+      dp.setZ(i, dp.getZ(i) + dustVel[i*3+2]);
+      if (dp.getX(i) > 25) dp.setX(i, -25);
+      if (dp.getY(i) > 14) dp.setY(i, 0.2);
+    }
+    dp.needsUpdate = true;
+  }
+
+  // Braises montantes
+  const ep = emberGeo.attributes.position;
+  for (let i = 0; i < emberCount; i++) {
+    ep.setX(i, ep.getX(i) + emberVel[i*3]   + Math.sin(t*3+i)*0.002);
+    ep.setY(i, ep.getY(i) + emberVel[i*3+1]);
+    ep.setZ(i, ep.getZ(i) + emberVel[i*3+2]);
+    if (ep.getY(i) > 6) { // Recycler la braise
+      ep.setX(i, (Math.random()-0.5)*1.2);
+      ep.setY(i, 0.1);
+      ep.setZ(i, 2.5 + (Math.random()-0.5)*1.2);
+    }
+  }
+  ep.needsUpdate = true;
+
+  renderer.render(scene, camera);
+  labelRdr.render(scene, camera);
 }
 animate();
 
-window.toggleRotation=()=>controls.autoRotate=!controls.autoRotate;
-window.resetCamera=()=>{ camera.position.set(8,4,12); controls.target.set(0,2,0); controls.update(); };
-window.afficherInfo=()=>{ document.getElementById('info-titre').textContent='La Takienta'; document.getElementById('info-contenu').textContent='Les tours Takienta sont les maisons-fortresses du peuple Batammariba. Chaque tour symbolise l univers : niveau bas pour les animaux, niveau moyen pour les vivants, toit pour les ancetres. Inscrites au Patrimoine UNESCO en 2004.'; document.getElementById('info-panel').classList.add('visible'); };
-window.fermerInfo=()=>document.getElementById('info-panel').classList.remove('visible');
-window.addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); labelRenderer.setSize(innerWidth,innerHeight); });
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// RESPONSIVE
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+window.addEventListener('resize', () => {
+  const w = innerWidth, h = innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  labelRdr.setSize(w, h);
+});
+
+// Gyroscope mobile
+if (window.DeviceOrientationEvent) {
+  window.addEventListener('deviceorientation', e => {
+    if (!e.beta) return;
+    const b = THREE.MathUtils.degToRad(e.beta  - 45);
+    const g = THREE.MathUtils.degToRad(e.gamma);
+    camera.position.x += g * 0.02;
+    camera.position.y = Math.max(2, Math.min(20, 5 + b * 3));
+    controls.update();
+  });
+}
 </script>
 </body>
 </html>
