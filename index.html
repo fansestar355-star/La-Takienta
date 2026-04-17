@@ -1379,22 +1379,27 @@
             });
             if (!targetMesh) return;
 
-            // Point d'ancrage sur le mesh
-            const targetPoint = new THREE.Vector3();
+            // Position monde du mesh (centre de sa bounding box)
+            const worldPoint = new THREE.Vector3();
             if (meshName === "ALTARS") {
-                targetMesh.getWorldPosition(targetPoint);
+                targetMesh.getWorldPosition(worldPoint);
             } else {
-                new THREE.Box3().setFromObject(targetMesh).getCenter(targetPoint);
+                new THREE.Box3().setFromObject(targetMesh).getCenter(worldPoint);
             }
 
-            // Le dot est directement l'élément CSS2DObject (pas de wrapper intermédiaire)
+            // Convertir en coordonnées locales du modèle principal
+            mainModel.updateMatrixWorld(true);
+            const localPoint = mainModel.worldToLocal(worldPoint.clone());
+
             const dotDiv = document.createElement('div');
             dotDiv.className = 'annotation-dot';
-            dotDiv.addEventListener('click', () => showInfo(meshName, targetPoint));
+            // worldPoint est passé en closure pour showInfo (position monde stable)
+            const wp = worldPoint.clone();
+            dotDiv.addEventListener('click', () => showInfo(meshName, wp));
 
             const dotObj = new CSS2DObject(dotDiv);
-            dotObj.position.copy(targetPoint);
-            landscapeScene.add(dotObj);
+            dotObj.position.copy(localPoint);
+            mainModel.add(dotObj); // attaché au modèle → suit tous ses mouvements
 
             annotations.push({ label: dotObj });
         }
