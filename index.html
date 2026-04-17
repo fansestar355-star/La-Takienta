@@ -273,49 +273,41 @@
             filter: blur(10px);
         }
 
-        /* --- Esthétique Annotation Premium (Style Callout UI) --- */
-
         /* =====================================================
-           MARQUEURS ETHNOGRAPHIQUES
-           Losange statique · index doré · titre · divider · catégorie
-           Révélation en cascade à l'entrée dans le paysage
+           MARQUEURS ETHNOGRAPHIQUES — redesign 2025
+           Losange doré · ligne fine · chip compact
+           Deux colonnes ordonnées, révélation en cascade
            ===================================================== */
 
-        /* Révélation séquentielle au chargement */
         @keyframes annotationReveal {
-            from { opacity: 0; transform: translateY(10px); }
-            to   { opacity: 1; transform: translateY(0);    }
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0);   }
         }
 
-        /* Point cliquable sur le modèle */
+        @keyframes diamondPulse {
+            0%, 100% { box-shadow: 0 0 0 2px rgba(5,5,5,0.95), 0 0 0 3.5px rgba(249,213,139,0.35), 0 0 10px rgba(249,213,139,0.2); }
+            50%       { box-shadow: 0 0 0 2px rgba(5,5,5,0.95), 0 0 0 5px   rgba(249,213,139,0.15), 0 0 18px rgba(249,213,139,0.35); }
+        }
+
+        /* Losange doré sur le modèle */
         .annotation-dot {
-            width: 11px;
-            height: 11px;
-            border: 2px solid rgba(255, 255, 255, 0.9);
-            background: rgba(255, 255, 255, 0.45);
-            border-radius: 50%;
-            pointer-events: auto;
-            cursor: pointer;
+            width: 8px;
+            height: 8px;
+            background: #f9d58b;
+            transform: rotate(45deg);
             flex-shrink: 0;
-            transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-            box-shadow: 0 0 8px rgba(255,255,255,0.3);
-        }
-        .annotation-dot:hover {
-            transform: scale(1.7);
-            background: rgba(249, 213, 139, 0.85);
-            border-color: #f9d58b;
-            box-shadow: 0 0 14px rgba(249,213,139,0.6);
+            pointer-events: none;
+            animation: diamondPulse 2.6s ease-in-out infinite;
         }
 
-        /* Wrapper : opaque par défaut, animé à l'init */
+        /* Wrapper animé */
         .annotation-wrapper {
             pointer-events: none;
             opacity: 0;
-            /* animé via JS avec animationDelay */
-            animation: annotationReveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation: annotationReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
 
-        /* Bloc texte cliquable */
+        /* Chip cliquable */
         .annotation-card {
             pointer-events: auto;
             cursor: pointer;
@@ -323,105 +315,44 @@
             flex-direction: column;
             white-space: nowrap;
             user-select: none;
+            padding: 7px 11px 6px;
+            background: rgba(4, 2, 8, 0.82);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(249, 213, 139, 0.13);
+            transition: background 0.25s, border-color 0.25s;
         }
-
-        /* Numéro d'index (01, 02…) */
-        .annotation-index {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 9px;
-            font-weight: 400;
-            letter-spacing: 0.15em;
-            color: #f9d58b;
-            text-shadow: 0 0 12px rgba(249, 213, 139, 0.4);
-            margin-bottom: 4px;
-            transition: text-shadow 0.25s ease;
-        }
-        .annotation-card:hover .annotation-index {
-            text-shadow: 0 0 18px rgba(249, 213, 139, 0.8);
+        .annotation-card:hover {
+            background: rgba(12, 6, 20, 0.92);
+            border-color: rgba(249, 213, 139, 0.4);
         }
 
         /* Titre */
         .annotation-title {
             font-family: 'Inter', sans-serif;
-            font-size: 14px;
-            font-weight: 400;
-            letter-spacing: 0.03em;
-            color: rgba(255, 255, 255, 0.92);
-            text-shadow: 0 1px 12px rgba(0,0,0,0.99);
-            line-height: 1;
+            font-size: 10.5px;
+            font-weight: 500;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.88);
+            line-height: 1.2;
             white-space: nowrap;
-            transition: color 0.25s ease;
+            transition: color 0.22s;
         }
-        .annotation-card:hover .annotation-title {
-            color: #f9d58b;
-        }
-
-        /* Séparateur avec shimmer doré en boucle */
-        @keyframes dividerScan {
-            0%   { background-position: -220% 0; }
-            100% { background-position: 220% 0;  }
-        }
-
-        .annotation-divider {
-            height: 1px;
-            margin: 6px 0 5px;
-            min-width: 90px;
-            width: 100%;
-            background: linear-gradient(
-                90deg,
-                rgba(255,255,255,0.28) 0%,
-                rgba(255,255,255,0.28) 35%,
-                rgba(249,213,139,0.95) 50%,
-                rgba(255,255,255,0.28) 65%,
-                rgba(255,255,255,0.28) 100%
-            );
-            background-size: 220% 100%;
-            animation: dividerScan 2.8s ease-in-out infinite;
-        }
-        .annotation-card:hover .annotation-divider {
-            background: rgba(249, 213, 139, 0.75);
-            animation: none;
-        }
+        .annotation-card:hover .annotation-title { color: #f9d58b; }
 
         /* Catégorie */
         .annotation-subtitle {
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 8.5px;
-            font-weight: 300;
-            letter-spacing: 0.12em;
-            color: rgba(255, 255, 255, 0.38);
-            text-shadow: 0 1px 8px rgba(0,0,0,0.99);
-            text-transform: uppercase;
-            white-space: nowrap;
-            transition: color 0.25s ease;
-        }
-        .annotation-card:hover .annotation-subtitle {
-            color: rgba(249, 213, 139, 0.55);
-        }
-
-        /* CTA pulsant sous le sous-titre */
-        @keyframes ctaPulse {
-            0%, 100% { opacity: 0.28; letter-spacing: 0.18em; }
-            50%       { opacity: 0.80; letter-spacing: 0.22em; }
-        }
-
-        .annotation-cta {
-            font-family: 'IBM Plex Mono', monospace;
             font-size: 7.5px;
-            font-weight: 400;
-            color: #f9d58b;
+            font-weight: 300;
+            letter-spacing: 0.09em;
+            color: rgba(249, 213, 139, 0.42);
             text-transform: uppercase;
+            margin-top: 3px;
             white-space: nowrap;
-            margin-top: 7px;
-            animation: ctaPulse 2.2s ease-in-out infinite;
-            text-shadow: 0 0 10px rgba(249,213,139,0.35);
+            transition: color 0.22s;
         }
-        .annotation-card:hover .annotation-cta {
-            animation: none;
-            opacity: 1;
-            letter-spacing: 0.28em;
-            text-shadow: 0 0 16px rgba(249,213,139,0.7);
-        }
+        .annotation-card:hover .annotation-subtitle { color: rgba(249,213,139,0.75); }
 
         /* Panneau d'information */
         #info-card {
@@ -576,11 +507,8 @@
         // --- Globals ---
         let scene, camera, renderer, globe, earthGroup, atmosphere, marker, controls;
         let landscapeScene, landscapeCamera, landscapeRenderer, landscapeControls, labelRenderer, skyObj, sunVec;
-        let mainModel = null;
-        let annotations = [];
-        let annotationMeshes = []; // sphères 3D cliquables (hit area)
-        let annotationGroups = []; // groupes pour animation des anneaux
-        let mouseDownCoords = null;
+        let mainModel = null; // Stockage du modèle pour les annotations
+        let annotations = []; // Liste des labels actifs
 
         const PART_DESCRIPTIONS = {
             "LADDER_2": { title: "Échelle Sacrée", desc: "Permet l'accès aux niveaux supérieurs. Elle symbolise le lien entre la terre et le ciel." },
@@ -1064,63 +992,6 @@
             landscapeControls.minDistance = 50;
             landscapeControls.maxDistance = 350;
 
-            // Coupe l'animation orbitale dès que l'utilisateur prend le contrôle
-            landscapeControls.addEventListener('start', () => {
-                if (orbitTween) { orbitTween.kill(); orbitTween = null; }
-            });
-
-            // --- Raycaster pour les dots 3D ---
-            const raycaster = new THREE.Raycaster();
-            const mouse = new THREE.Vector2();
-
-            function getAnnotationHit(e) {
-                const rect = landscapeRenderer.domElement.getBoundingClientRect();
-                mouse.set(
-                    ((e.clientX - rect.left) / rect.width) * 2 - 1,
-                    -((e.clientY - rect.top) / rect.height) * 2 + 1
-                );
-                raycaster.setFromCamera(mouse, landscapeCamera);
-                const hits = raycaster.intersectObjects(annotationMeshes);
-                return hits.length > 0 ? hits[0].object : null;
-            }
-
-            // Survol : curseur + highlight doré sur tout le groupe
-            landscapeRenderer.domElement.addEventListener('mousemove', (e) => {
-                const hit = getAnnotationHit(e);
-                // Reset tous les groupes
-                annotationMeshes.forEach(m => {
-                    m.userData.group.scale.setScalar(1);
-                    m.userData.ring1.material.color.setHex(0xffffff);
-                    m.userData.ring1.material.opacity = 0.55;
-                    m.userData.ring2.material.opacity = 0.28;
-                });
-                if (hit) {
-                    hit.userData.group.scale.setScalar(1.6);
-                    hit.userData.ring1.material.color.setHex(0xf9d58b);
-                    hit.userData.ring1.material.opacity = 1.0;
-                    hit.userData.ring2.material.color.setHex(0xf9d58b);
-                    hit.userData.ring2.material.opacity = 0.7;
-                    landscapeRenderer.domElement.style.cursor = 'pointer';
-                } else {
-                    landscapeRenderer.domElement.style.cursor = 'default';
-                }
-            });
-
-            // Distinguer clic de drag
-            landscapeRenderer.domElement.addEventListener('mousedown', (e) => {
-                mouseDownCoords = { x: e.clientX, y: e.clientY };
-            });
-
-            landscapeRenderer.domElement.addEventListener('mouseup', (e) => {
-                if (!mouseDownCoords) return;
-                const dx = e.clientX - mouseDownCoords.x;
-                const dy = e.clientY - mouseDownCoords.y;
-                mouseDownCoords = null;
-                if (Math.sqrt(dx * dx + dy * dy) > 5) return; // drag ignoré
-                const hit = getAnnotationHit(e);
-                if (hit) showInfo(hit.userData.meshName, hit.userData.worldPoint);
-            });
-
             const ambient = new THREE.AmbientLight(0xffffff, 1.2);
             landscapeScene.add(ambient);
 
@@ -1414,15 +1285,17 @@
             "DRIED_VEGETABLES": "Ressources alimentaires"
         };
 
+        // Colonne droite : x positif — Colonne gauche : x négatif
+        // y décalé pour compenser la hauteur de chaque mesh → espacement visuel régulier
         const SPATIAL_MAP = {
-            "THATCHED COVER_1": { x:  10, y: 55, z: -20 },   // haut centre
-            "ATTIC_1":          { x:  70, y: 30, z: -18 },   // haut droite
-            "LADDER_2":         { x:  72, y:  5, z:   5 },   // milieu droite
-            "ALTARS":           { x:  62, y: -14, z: 20 },   // bas droite
-            "WOOD":             { x:  10, y: -10, z:  65 },  // bas centre
-            "DRIED_VEGETABLES": { x: -65, y: 42, z: -15 },  // haut gauche
-            "FORTRESSES":       { x: -72, y:  3, z:  18 },   // milieu gauche
-            "ATTIC_2":          { x: -68, y: 26, z:  12 },   // gauche
+            "THATCHED COVER_1": { x:  76, y:  8, z:  -6 },   // droite haut
+            "ATTIC_1":          { x:  76, y: -6, z:  -6 },   // droite
+            "LADDER_2":         { x:  76, y: -18, z: -6 },   // droite
+            "ALTARS":           { x:  76, y: -30, z: -6 },   // droite bas
+            "DRIED_VEGETABLES": { x: -76, y: 14, z:   6 },   // gauche haut
+            "ATTIC_2":          { x: -76, y:  0, z:   6 },   // gauche
+            "FORTRESSES":       { x: -76, y: -13, z:  6 },   // gauche
+            "WOOD":             { x: -76, y: -26, z:  6 },   // gauche bas
         };
 
         function addAnnotation(meshName, text) {
@@ -1434,66 +1307,77 @@
             });
             if (!targetMesh) return;
 
-            // Position monde du mesh
-            const worldPoint = new THREE.Vector3();
+            // 1. Point d'ancrage
+            const targetPoint = new THREE.Vector3();
             if (meshName === "ALTARS") {
-                targetMesh.getWorldPosition(worldPoint);
+                targetMesh.getWorldPosition(targetPoint);
             } else {
-                new THREE.Box3().setFromObject(targetMesh).getCenter(worldPoint);
+                new THREE.Box3().setFromObject(targetMesh).getCenter(targetPoint);
             }
 
-            mainModel.updateMatrixWorld(true);
-            const localPoint = mainModel.worldToLocal(worldPoint.clone());
+            // 2. Position du label
+            const off = SPATIAL_MAP[meshName] || { x: 10, y: 14, z: 8 };
+            const labelPos = targetPoint.clone().add(new THREE.Vector3(off.x, off.y, off.z));
 
-            // --- Groupe principal ---
-            const group = new THREE.Group();
-            group.position.copy(localPoint);
+            // 3. Trait de liaison
+            const line = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([targetPoint, labelPos]),
+                new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.28 })
+            );
+            landscapeScene.add(line);
 
-            // 1. Sphère centrale dorée (zone de clic pour le raycaster)
-            const sphereGeo = new THREE.SphereGeometry(0.10, 14, 14);
-            const sphereMat = new THREE.MeshBasicMaterial({ color: 0xf9d58b, depthTest: false });
-            const sphere = new THREE.Mesh(sphereGeo, sphereMat);
-            sphere.renderOrder = 999;
-            sphere.userData.meshName = meshName;
-            sphere.userData.worldPoint = worldPoint.clone();
-            sphere.userData.group = group;
+            // 4. Losange sur le modèle
+            const dotDiv = document.createElement('div');
+            dotDiv.className = 'annotation-dot';
+            const dotObj = new CSS2DObject(dotDiv);
+            dotObj.position.copy(targetPoint);
+            landscapeScene.add(dotObj);
 
-            // 2. Anneau intérieur — blanc, tourne sur Z
-            const ring1Geo = new THREE.TorusGeometry(0.22, 0.022, 8, 36);
-            const ring1Mat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.55 });
-            const ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
-            ring1.renderOrder = 999;
+            // 5. Délai de révélation en cascade
+            const orderIdx = ANNOTATION_ORDER.indexOf(meshName);
+            const idx = orderIdx >= 0 ? orderIdx : annotations.length;
+            const revealDelay = (idx * 260 + 800) + 'ms';
+            const isLeft = off.x < 0;
 
-            // 3. Anneau extérieur — blanc discret, tourne sur X (sens inverse)
-            const ring2Geo = new THREE.TorusGeometry(0.34, 0.012, 8, 36);
-            const ring2Mat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.28 });
-            const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
-            ring2.renderOrder = 999;
-            ring2.rotation.x = Math.PI / 3; // incliné pour l'effet gyroscope
+            // 6. Chip texte
+            const cardRoot = document.createElement('div');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'annotation-wrapper';
+            wrapper.style.animationDelay = revealDelay;
+            wrapper.style.transform = isLeft ? 'translateX(-100%)' : 'translateX(0)';
 
-            // 4. Quatre petits tirets autour (style réticule)
-            const tickMat = new THREE.MeshBasicMaterial({ color: 0xf9d58b, depthTest: false, transparent: true, opacity: 0.7 });
-            const tickGeo = new THREE.BoxGeometry(0.08, 0.014, 0.014);
-            [0, 90, 180, 270].forEach(deg => {
-                const tick = new THREE.Mesh(tickGeo, tickMat);
-                tick.renderOrder = 999;
-                const rad = deg * Math.PI / 180;
-                tick.position.set(Math.cos(rad) * 0.22, Math.sin(rad) * 0.22, 0);
-                tick.rotation.z = rad;
-                group.add(tick);
-            });
+            const card = document.createElement('div');
+            card.className = 'annotation-card';
+            card.style.alignItems = isLeft ? 'flex-end' : 'flex-start';
+            card.style.textAlign  = isLeft ? 'right'    : 'left';
+            // Bordure colorée du côté opposé au modèle
+            if (isLeft) {
+                card.style.borderRight = '2px solid rgba(249,213,139,0.55)';
+                card.style.borderLeft  = '1px solid rgba(249,213,139,0.10)';
+            } else {
+                card.style.borderLeft  = '2px solid rgba(249,213,139,0.55)';
+                card.style.borderRight = '1px solid rgba(249,213,139,0.10)';
+            }
+            card.addEventListener('click', () => showInfo(meshName, targetPoint, labelPos));
 
-            sphere.userData.ring1 = ring1;
-            sphere.userData.ring2 = ring2;
+            const titleEl = document.createElement('div');
+            titleEl.className = 'annotation-title';
+            titleEl.textContent = PART_DESCRIPTIONS[meshName]?.title ?? text;
 
-            group.add(sphere);
-            group.add(ring1);
-            group.add(ring2);
-            mainModel.add(group);
+            const subtitleEl = document.createElement('div');
+            subtitleEl.className = 'annotation-subtitle';
+            subtitleEl.textContent = ANNOTATION_SUBTITLE[meshName] ?? 'Architecture Batammariba';
 
-            annotationMeshes.push(sphere);
-            annotationGroups.push({ ring1, ring2 });
-            annotations.push({ group });
+            card.appendChild(titleEl);
+            card.appendChild(subtitleEl);
+            wrapper.appendChild(card);
+            cardRoot.appendChild(wrapper);
+
+            const cardObj = new CSS2DObject(cardRoot);
+            cardObj.position.copy(labelPos);
+            landscapeScene.add(cardObj);
+
+            annotations.push({ label: cardObj, line, dotLabel: dotObj });
         }
 
         /**
@@ -1504,10 +1388,10 @@
          *  - On se place à distance fixe (40 unités) dans cette même direction
          *  - Résultat : la caméra glisse directement vers le sujet sans saut latéral
          */
-        // Stocke le tween de rotation pour pouvoir l'annuler
+        // Stocke le tween de rotation pour pouvoir l'annuler au closeInfo
         let orbitTween = null;
 
-        function showInfo(partName, point) {
+        function showInfo(partName, point, labelPos) {
             const data = PART_DESCRIPTIONS[partName];
             if (!data) return;
 
@@ -1516,12 +1400,10 @@
             document.getElementById('info-card').classList.add('active');
             document.getElementById('ui-bottom').classList.add('fade');
 
-            if (landscapeControls) {
-                landscapeControls.autoRotate = false;
-                landscapeControls.enabled = false; // bloque pendant le zoom
-            }
+            if (landscapeControls) landscapeControls.autoRotate = false;
             if (orbitTween) { orbitTween.kill(); orbitTween = null; }
 
+            // Direction caméra → point
             const camPos = landscapeCamera.position.clone();
             const dir = camPos.clone().sub(point).normalize();
 
@@ -1540,7 +1422,7 @@
                 onUpdate: () => landscapeControls.update()
             });
 
-            // Phase 2 : zoom vers la partie
+            // Phase 2 : glissement vers la partie
             gsap.to(landscapeCamera.position, {
                 x: targetCamPos.x,
                 y: targetCamPos.y,
@@ -1550,15 +1432,13 @@
                 ease: "power3.inOut",
                 onUpdate: () => landscapeControls.update(),
                 onComplete: () => {
-                    // Réactive les contrôles manuels après le zoom
-                    if (landscapeControls) landscapeControls.enabled = true;
-
-                    // Phase 3 : rotation orbitale douce (arc ~35°)
+                    // Phase 3 : légère rotation orbitale autour du point (arc de ~35°)
+                    // On calcule la distance et l'angle de départ en coordonnées polaires
                     const dx = landscapeCamera.position.x - point.x;
                     const dz = landscapeCamera.position.z - point.z;
                     const radius = Math.sqrt(dx * dx + dz * dz);
                     const startAngle = Math.atan2(dz, dx);
-                    const sweepAngle = THREE.MathUtils.degToRad(35);
+                    const sweepAngle = THREE.MathUtils.degToRad(35); // amplitude de la rotation
                     const camY = landscapeCamera.position.y;
 
                     const proxy = { angle: startAngle };
@@ -1566,10 +1446,9 @@
                         angle: startAngle + sweepAngle,
                         duration: 3.5,
                         ease: "power1.inOut",
-                        yoyo: true,
-                        repeat: 1,
+                        yoyo: true,       // revient au point de départ
+                        repeat: 1,        // aller-retour une fois
                         onUpdate: () => {
-                            // Si l'utilisateur interagit, le tween se coupe (via 'start' listener)
                             landscapeCamera.position.x = point.x + radius * Math.cos(proxy.angle);
                             landscapeCamera.position.z = point.z + radius * Math.sin(proxy.angle);
                             landscapeCamera.position.y = camY;
@@ -1589,8 +1468,8 @@
             document.getElementById('info-card').classList.remove('active');
             document.getElementById('ui-bottom').classList.remove('fade');
 
+            // Stoppe la rotation orbitale si elle est en cours
             if (orbitTween) { orbitTween.kill(); orbitTween = null; }
-            if (landscapeControls) landscapeControls.enabled = false;
 
             // Retour large — pivot d'abord, puis recul caméra
             gsap.to(landscapeControls.target, {
@@ -1605,12 +1484,7 @@
                 delay: 0.1,
                 ease: "power3.inOut",
                 onUpdate: () => landscapeControls.update(),
-                onComplete: () => {
-                    if (landscapeControls) {
-                        landscapeControls.enabled = true;
-                        landscapeControls.autoRotate = true;
-                    }
-                }
+                onComplete: () => { if (landscapeControls) landscapeControls.autoRotate = true; }
             });
         }
 
@@ -1625,11 +1499,6 @@
                 renderer.render(scene, camera);
             }
             if (step === 2 && landscapeRenderer) {
-                // Animation des anneaux de chaque annotation
-                annotationGroups.forEach(g => {
-                    g.ring1.rotation.z += 0.018;
-                    g.ring2.rotation.y -= 0.011;
-                });
                 landscapeControls.update();
                 landscapeRenderer.render(landscapeScene, landscapeCamera);
                 if (labelRenderer) labelRenderer.render(landscapeScene, landscapeCamera);
