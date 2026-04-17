@@ -576,8 +576,10 @@
         // --- Globals ---
         let scene, camera, renderer, globe, earthGroup, atmosphere, marker, controls;
         let landscapeScene, landscapeCamera, landscapeRenderer, landscapeControls, labelRenderer, skyObj, sunVec;
-        let mainModel = null; // Stockage du modèle pour les annotations
-        let annotations = []; // Liste des labels actifs
+        let mainModel = null;
+        let annotations = [];
+        let annotationMeshes = []; // sphères 3D cliquables
+        let mouseDownCoords = null;
 
         const PART_DESCRIPTIONS = {
             "LADDER_2": { title: "Échelle Sacrée", desc: "Permet l'accès aux niveaux supérieurs. Elle symbolise le lien entre la terre et le ciel." },
@@ -1066,6 +1068,52 @@
                 if (orbitTween) { orbitTween.kill(); orbitTween = null; }
             });
 
+            // --- Raycaster pour les dots 3D ---
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+
+            function getAnnotationHit(e) {
+                const rect = landscapeRenderer.domElement.getBoundingClientRect();
+                mouse.set(
+                    ((e.clientX - rect.left) / rect.width) * 2 - 1,
+                    -((e.clientY - rect.top) / rect.height) * 2 + 1
+                );
+                raycaster.setFromCamera(mouse, landscapeCamera);
+                const hits = raycaster.intersectObjects(annotationMeshes);
+                return hits.length > 0 ? hits[0].object : null;
+            }
+
+            // Survol : curseur + highlight doré
+            landscapeRenderer.domElement.addEventListener('mousemove', (e) => {
+                const hit = getAnnotationHit(e);
+                annotationMeshes.forEach(m => {
+                    m.material.color.setHex(0xffffff);
+                    m.scale.setScalar(1);
+                });
+                if (hit) {
+                    hit.material.color.setHex(0xf9d58b);
+                    hit.scale.setScalar(1.8);
+                    landscapeRenderer.domElement.style.cursor = 'pointer';
+                } else {
+                    landscapeRenderer.domElement.style.cursor = 'default';
+                }
+            });
+
+            // Distinguer clic de drag
+            landscapeRenderer.domElement.addEventListener('mousedown', (e) => {
+                mouseDownCoords = { x: e.clientX, y: e.clientY };
+            });
+
+            landscapeRenderer.domElement.addEventListener('mouseup', (e) => {
+                if (!mouseDownCoords) return;
+                const dx = e.clientX - mouseDownCoords.x;
+                const dy = e.clientY - mouseDownCoords.y;
+                mouseDownCoords = null;
+                if (Math.sqrt(dx * dx + dy * dy) > 5) return; // drag ignoré
+                const hit = getAnnotationHit(e);
+                if (hit) showInfo(hit.userData.meshName, hit.userData.worldPoint);
+            });
+
             const ambient = new THREE.AmbientLight(0xffffff, 1.2);
             landscapeScene.add(ambient);
 
@@ -1379,7 +1427,7 @@
             });
             if (!targetMesh) return;
 
-            // Position monde du mesh (centre de sa bounding box)
+            // Position monde du mesh
             const worldPoint = new THREE.Vector3();
             if (meshName === "ALTARS") {
                 targetMesh.getWorldPosition(worldPoint);
@@ -1387,21 +1435,22 @@
                 new THREE.Box3().setFromObject(targetMesh).getCenter(worldPoint);
             }
 
-            // Convertir en coordonnées locales du modèle principal
+            // Sphère 3D — colle parfaitement sur le modèle car dans le même espace 3D
+            const dotGeo = new THREE.SphereGeometry(0.13, 14, 14);
+            const dotMat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false });
+            const dotMesh = new THREE.Mesh(dotGeo, dotMat);
+            dotMesh.renderOrder = 999; // toujours visible devant le modèle
+            dotMesh.userData.meshName = meshName;
+            dotMesh.userData.worldPoint = worldPoint.clone();
+
+            // Coordonnées locales dans le modèle → bouge avec lui
             mainModel.updateMatrixWorld(true);
             const localPoint = mainModel.worldToLocal(worldPoint.clone());
+            dotMesh.position.copy(localPoint);
+            mainModel.add(dotMesh);
 
-            const dotDiv = document.createElement('div');
-            dotDiv.className = 'annotation-dot';
-            // worldPoint est passé en closure pour showInfo (position monde stable)
-            const wp = worldPoint.clone();
-            dotDiv.addEventListener('click', () => showInfo(meshName, wp));
-
-            const dotObj = new CSS2DObject(dotDiv);
-            dotObj.position.copy(localPoint);
-            mainModel.add(dotObj); // attaché au modèle → suit tous ses mouvements
-
-            annotations.push({ label: dotObj });
+            annotationMeshes.push(dotMesh);
+            annotations.push({ mesh: dotMesh });
         }
 
         /**
