@@ -287,15 +287,24 @@
             to   { opacity: 1; transform: translateY(0);    }
         }
 
-        /* Point simple sur le modèle — marqueur circulaire, statique */
+        /* Point cliquable sur le modèle */
         .annotation-dot {
-            width: 7px;
-            height: 7px;
-            border: 1.5px solid rgba(255, 255, 255, 0.85);
-            background: rgba(255, 255, 255, 0.35);
+            width: 11px;
+            height: 11px;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.45);
             border-radius: 50%;
-            pointer-events: none;
+            pointer-events: auto;
+            cursor: pointer;
             flex-shrink: 0;
+            transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+            box-shadow: 0 0 8px rgba(255,255,255,0.3);
+        }
+        .annotation-dot:hover {
+            transform: scale(1.7);
+            background: rgba(249, 213, 139, 0.85);
+            border-color: #f9d58b;
+            box-shadow: 0 0 14px rgba(249,213,139,0.6);
         }
 
         /* Wrapper : opaque par défaut, animé à l'init */
@@ -1052,6 +1061,11 @@
             landscapeControls.minDistance = 50;
             landscapeControls.maxDistance = 350;
 
+            // Coupe l'animation orbitale dès que l'utilisateur prend le contrôle
+            landscapeControls.addEventListener('start', () => {
+                if (orbitTween) { orbitTween.kill(); orbitTween = null; }
+            });
+
             const ambient = new THREE.AmbientLight(0xffffff, 1.2);
             landscapeScene.add(ambient);
 
@@ -1365,7 +1379,7 @@
             });
             if (!targetMesh) return;
 
-            // 1. Point d'ancrage
+            // Point d'ancrage sur le mesh
             const targetPoint = new THREE.Vector3();
             if (meshName === "ALTARS") {
                 targetMesh.getWorldPosition(targetPoint);
@@ -1373,78 +1387,27 @@
                 new THREE.Box3().setFromObject(targetMesh).getCenter(targetPoint);
             }
 
-            // 2. Position du label
-            const off = SPATIAL_MAP[meshName] || { x: 10, y: 14, z: 8 };
-            const labelPos = targetPoint.clone().add(new THREE.Vector3(off.x, off.y, off.z));
-
-            // 3. Trait de liaison
-            const line = new THREE.Line(
-                new THREE.BufferGeometry().setFromPoints([targetPoint, labelPos]),
-                new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.28 })
-            );
-            landscapeScene.add(line);
-
-            // 4. Losange sur le modèle
-            const dotDiv = document.createElement('div');
-            dotDiv.className = 'annotation-dot';
-            const dotObj = new CSS2DObject(dotDiv);
-            dotObj.position.copy(targetPoint);
-            landscapeScene.add(dotObj);
-
-            // 5. Index et délai de révélation
+            // Délai de révélation en cascade
             const orderIdx = ANNOTATION_ORDER.indexOf(meshName);
             const idx = orderIdx >= 0 ? orderIdx : annotations.length;
-            const indexStr = String(idx + 1).padStart(2, '0');
             const revealDelay = (idx * 280 + 900) + 'ms';
-            const isLeft = off.x < 0;
 
-            // 6. Bloc texte
-            const cardRoot = document.createElement('div');
+            // Wrapper animé (reveal) contenant le point
             const wrapper = document.createElement('div');
             wrapper.className = 'annotation-wrapper';
             wrapper.style.animationDelay = revealDelay;
-            wrapper.style.transform = isLeft ? 'translateX(-100%)' : 'translateX(0)';
 
-            const card = document.createElement('div');
-            card.className = 'annotation-card';
-            card.style.alignItems = isLeft ? 'flex-end' : 'flex-start';
-            card.style.textAlign  = isLeft ? 'right'    : 'left';
-            card.addEventListener('click', () => showInfo(meshName, targetPoint, labelPos));
+            // Point cliquable
+            const dotDiv = document.createElement('div');
+            dotDiv.className = 'annotation-dot';
+            dotDiv.addEventListener('click', () => showInfo(meshName, targetPoint));
+            wrapper.appendChild(dotDiv);
 
-            const indexEl = document.createElement('div');
-            indexEl.className = 'annotation-index';
-            indexEl.textContent = indexStr;
+            const dotObj = new CSS2DObject(wrapper);
+            dotObj.position.copy(targetPoint);
+            landscapeScene.add(dotObj);
 
-            const titleEl = document.createElement('div');
-            titleEl.className = 'annotation-title';
-            titleEl.textContent = PART_DESCRIPTIONS[meshName]?.title ?? text;
-
-            const dividerEl = document.createElement('div');
-            dividerEl.className = 'annotation-divider';
-
-            const subtitleEl = document.createElement('div');
-            subtitleEl.className = 'annotation-subtitle';
-            subtitleEl.textContent = ANNOTATION_SUBTITLE[meshName] ?? 'Architecture Batammariba';
-
-            const ctaEl = document.createElement('div');
-            ctaEl.className = 'annotation-cta';
-            ctaEl.textContent = '→ Explorer';
-            // Stagger le CTA pour qu'il ne pulse pas en même temps que les autres
-            ctaEl.style.animationDelay = (idx * 0.4) + 's';
-
-            card.appendChild(indexEl);
-            card.appendChild(titleEl);
-            card.appendChild(dividerEl);
-            card.appendChild(subtitleEl);
-            card.appendChild(ctaEl);
-            wrapper.appendChild(card);
-            cardRoot.appendChild(wrapper);
-
-            const cardObj = new CSS2DObject(cardRoot);
-            cardObj.position.copy(labelPos);
-            landscapeScene.add(cardObj);
-
-            annotations.push({ label: cardObj, line, dotLabel: dotObj });
+            annotations.push({ label: dotObj });
         }
 
         /**
@@ -1455,10 +1418,10 @@
          *  - On se place à distance fixe (40 unités) dans cette même direction
          *  - Résultat : la caméra glisse directement vers le sujet sans saut latéral
          */
-        // Stocke le tween de rotation pour pouvoir l'annuler au closeInfo
+        // Stocke le tween de rotation pour pouvoir l'annuler
         let orbitTween = null;
 
-        function showInfo(partName, point, labelPos) {
+        function showInfo(partName, point) {
             const data = PART_DESCRIPTIONS[partName];
             if (!data) return;
 
@@ -1467,10 +1430,12 @@
             document.getElementById('info-card').classList.add('active');
             document.getElementById('ui-bottom').classList.add('fade');
 
-            if (landscapeControls) landscapeControls.autoRotate = false;
+            if (landscapeControls) {
+                landscapeControls.autoRotate = false;
+                landscapeControls.enabled = false; // bloque pendant le zoom
+            }
             if (orbitTween) { orbitTween.kill(); orbitTween = null; }
 
-            // Direction caméra → point
             const camPos = landscapeCamera.position.clone();
             const dir = camPos.clone().sub(point).normalize();
 
@@ -1489,7 +1454,7 @@
                 onUpdate: () => landscapeControls.update()
             });
 
-            // Phase 2 : glissement vers la partie
+            // Phase 2 : zoom vers la partie
             gsap.to(landscapeCamera.position, {
                 x: targetCamPos.x,
                 y: targetCamPos.y,
@@ -1499,13 +1464,15 @@
                 ease: "power3.inOut",
                 onUpdate: () => landscapeControls.update(),
                 onComplete: () => {
-                    // Phase 3 : légère rotation orbitale autour du point (arc de ~35°)
-                    // On calcule la distance et l'angle de départ en coordonnées polaires
+                    // Réactive les contrôles manuels après le zoom
+                    if (landscapeControls) landscapeControls.enabled = true;
+
+                    // Phase 3 : rotation orbitale douce (arc ~35°)
                     const dx = landscapeCamera.position.x - point.x;
                     const dz = landscapeCamera.position.z - point.z;
                     const radius = Math.sqrt(dx * dx + dz * dz);
                     const startAngle = Math.atan2(dz, dx);
-                    const sweepAngle = THREE.MathUtils.degToRad(35); // amplitude de la rotation
+                    const sweepAngle = THREE.MathUtils.degToRad(35);
                     const camY = landscapeCamera.position.y;
 
                     const proxy = { angle: startAngle };
@@ -1513,9 +1480,10 @@
                         angle: startAngle + sweepAngle,
                         duration: 3.5,
                         ease: "power1.inOut",
-                        yoyo: true,       // revient au point de départ
-                        repeat: 1,        // aller-retour une fois
+                        yoyo: true,
+                        repeat: 1,
                         onUpdate: () => {
+                            // Si l'utilisateur interagit, le tween se coupe (via 'start' listener)
                             landscapeCamera.position.x = point.x + radius * Math.cos(proxy.angle);
                             landscapeCamera.position.z = point.z + radius * Math.sin(proxy.angle);
                             landscapeCamera.position.y = camY;
@@ -1535,8 +1503,8 @@
             document.getElementById('info-card').classList.remove('active');
             document.getElementById('ui-bottom').classList.remove('fade');
 
-            // Stoppe la rotation orbitale si elle est en cours
             if (orbitTween) { orbitTween.kill(); orbitTween = null; }
+            if (landscapeControls) landscapeControls.enabled = false;
 
             // Retour large — pivot d'abord, puis recul caméra
             gsap.to(landscapeControls.target, {
@@ -1551,7 +1519,12 @@
                 delay: 0.1,
                 ease: "power3.inOut",
                 onUpdate: () => landscapeControls.update(),
-                onComplete: () => { if (landscapeControls) landscapeControls.autoRotate = true; }
+                onComplete: () => {
+                    if (landscapeControls) {
+                        landscapeControls.enabled = true;
+                        landscapeControls.autoRotate = true;
+                    }
+                }
             });
         }
 
