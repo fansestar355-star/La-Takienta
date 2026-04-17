@@ -274,40 +274,39 @@
         }
 
         /* =====================================================
-           MARQUEURS ETHNOGRAPHIQUES — redesign 2025
-           Losange doré · ligne fine · chip compact
-           Deux colonnes ordonnées, révélation en cascade
+           MARQUEURS ETHNOGRAPHIQUES
            ===================================================== */
 
         @keyframes annotationReveal {
-            from { opacity: 0; transform: translateY(6px); }
-            to   { opacity: 1; transform: translateY(0);   }
+            from { opacity: 0; }
+            to   { opacity: 1; }
         }
 
-        @keyframes diamondPulse {
-            0%, 100% { box-shadow: 0 0 0 2px rgba(5,5,5,0.95), 0 0 0 3.5px rgba(249,213,139,0.35), 0 0 10px rgba(249,213,139,0.2); }
-            50%       { box-shadow: 0 0 0 2px rgba(5,5,5,0.95), 0 0 0 5px   rgba(249,213,139,0.15), 0 0 18px rgba(249,213,139,0.35); }
+        @keyframes dotGlow {
+            0%,100% { opacity: 0.75; transform: scale(1);   }
+            50%      { opacity: 1;    transform: scale(1.35); }
         }
 
-        /* Losange doré sur le modèle */
+        /* Cercle doré animé sur le modèle */
         .annotation-dot {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             background: #f9d58b;
-            transform: rotate(45deg);
-            flex-shrink: 0;
+            border-radius: 50%;
+            box-shadow: 0 0 6px rgba(249,213,139,0.7), 0 0 14px rgba(249,213,139,0.35);
             pointer-events: none;
-            animation: diamondPulse 2.6s ease-in-out infinite;
+            flex-shrink: 0;
+            animation: dotGlow 2.2s ease-in-out infinite;
         }
 
         /* Wrapper animé */
         .annotation-wrapper {
             pointer-events: none;
             opacity: 0;
-            animation: annotationReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation: annotationReveal 0.5s ease forwards;
         }
 
-        /* Chip cliquable */
+        /* Label cliquable — texte flottant, pas de boîte */
         .annotation-card {
             pointer-events: auto;
             cursor: pointer;
@@ -315,44 +314,49 @@
             flex-direction: column;
             white-space: nowrap;
             user-select: none;
-            padding: 7px 11px 6px;
-            background: rgba(4, 2, 8, 0.82);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(249, 213, 139, 0.13);
-            transition: background 0.25s, border-color 0.25s;
-        }
-        .annotation-card:hover {
-            background: rgba(12, 6, 20, 0.92);
-            border-color: rgba(249, 213, 139, 0.4);
         }
 
         /* Titre */
         .annotation-title {
             font-family: 'Inter', sans-serif;
-            font-size: 10.5px;
-            font-weight: 500;
-            letter-spacing: 0.13em;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.20em;
             text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.88);
-            line-height: 1.2;
+            color: rgba(255, 255, 255, 0.90);
+            text-shadow: 0 0 24px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,1);
             white-space: nowrap;
-            transition: color 0.22s;
+            transition: color 0.2s, letter-spacing 0.3s;
         }
-        .annotation-card:hover .annotation-title { color: #f9d58b; }
+        .annotation-card:hover .annotation-title {
+            color: #f9d58b;
+            letter-spacing: 0.26em;
+            text-shadow: 0 0 20px rgba(249,213,139,0.4), 0 0 8px rgba(0,0,0,1);
+        }
+
+        /* Séparateur */
+        .annotation-sep {
+            height: 1px;
+            width: 100%;
+            margin: 5px 0 4px;
+            background: rgba(249,213,139,0.25);
+            transition: background 0.2s;
+        }
+        .annotation-card:hover .annotation-sep { background: rgba(249,213,139,0.6); }
 
         /* Catégorie */
         .annotation-subtitle {
             font-family: 'IBM Plex Mono', monospace;
             font-size: 7.5px;
             font-weight: 300;
-            letter-spacing: 0.09em;
-            color: rgba(249, 213, 139, 0.42);
+            letter-spacing: 0.12em;
+            color: rgba(249, 213, 139, 0.38);
             text-transform: uppercase;
-            margin-top: 3px;
+            text-shadow: 0 0 16px rgba(0,0,0,1);
             white-space: nowrap;
-            transition: color 0.22s;
+            transition: color 0.2s;
         }
-        .annotation-card:hover .annotation-subtitle { color: rgba(249,213,139,0.75); }
+        .annotation-card:hover .annotation-subtitle { color: rgba(249,213,139,0.70); }
 
         /* Panneau d'information */
         #info-card {
@@ -1285,17 +1289,15 @@
             "DRIED_VEGETABLES": "Ressources alimentaires"
         };
 
-        // Colonne droite : x positif — Colonne gauche : x négatif
-        // y décalé pour compenser la hauteur de chaque mesh → espacement visuel régulier
         const SPATIAL_MAP = {
-            "THATCHED COVER_1": { x:  76, y:  8, z:  -6 },   // droite haut
-            "ATTIC_1":          { x:  76, y: -6, z:  -6 },   // droite
-            "LADDER_2":         { x:  76, y: -18, z: -6 },   // droite
-            "ALTARS":           { x:  76, y: -30, z: -6 },   // droite bas
-            "DRIED_VEGETABLES": { x: -76, y: 14, z:   6 },   // gauche haut
-            "ATTIC_2":          { x: -76, y:  0, z:   6 },   // gauche
-            "FORTRESSES":       { x: -76, y: -13, z:  6 },   // gauche
-            "WOOD":             { x: -76, y: -26, z:  6 },   // gauche bas
+            "THATCHED COVER_1": { x:   4, y: 46, z: -14 },  // haut centre
+            "ATTIC_1":          { x:  64, y: 16, z: -16 },  // droite haut
+            "LADDER_2":         { x:  66, y:  0, z: -14 },  // droite milieu
+            "ALTARS":           { x:  62, y: -22, z:-12 },  // droite bas
+            "DRIED_VEGETABLES": { x: -62, y: 28, z:  12 },  // gauche haut
+            "ATTIC_2":          { x: -64, y: 10, z:  14 },  // gauche milieu
+            "FORTRESSES":       { x: -64, y: -8, z:  14 },  // gauche bas
+            "WOOD":             { x: -62, y: -24, z: 12 },  // gauche très bas
         };
 
         function addAnnotation(meshName, text) {
@@ -1350,25 +1352,21 @@
             card.className = 'annotation-card';
             card.style.alignItems = isLeft ? 'flex-end' : 'flex-start';
             card.style.textAlign  = isLeft ? 'right'    : 'left';
-            // Bordure colorée du côté opposé au modèle
-            if (isLeft) {
-                card.style.borderRight = '2px solid rgba(249,213,139,0.55)';
-                card.style.borderLeft  = '1px solid rgba(249,213,139,0.10)';
-            } else {
-                card.style.borderLeft  = '2px solid rgba(249,213,139,0.55)';
-                card.style.borderRight = '1px solid rgba(249,213,139,0.10)';
-            }
             card.addEventListener('click', () => showInfo(meshName, targetPoint, labelPos));
 
             const titleEl = document.createElement('div');
             titleEl.className = 'annotation-title';
             titleEl.textContent = PART_DESCRIPTIONS[meshName]?.title ?? text;
 
+            const sepEl = document.createElement('div');
+            sepEl.className = 'annotation-sep';
+
             const subtitleEl = document.createElement('div');
             subtitleEl.className = 'annotation-subtitle';
             subtitleEl.textContent = ANNOTATION_SUBTITLE[meshName] ?? 'Architecture Batammariba';
 
             card.appendChild(titleEl);
+            card.appendChild(sepEl);
             card.appendChild(subtitleEl);
             wrapper.appendChild(card);
             cardRoot.appendChild(wrapper);
