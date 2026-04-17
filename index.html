@@ -1387,23 +1387,12 @@
                 new THREE.Box3().setFromObject(targetMesh).getCenter(targetPoint);
             }
 
-            // Délai de révélation en cascade
-            const orderIdx = ANNOTATION_ORDER.indexOf(meshName);
-            const idx = orderIdx >= 0 ? orderIdx : annotations.length;
-            const revealDelay = (idx * 280 + 900) + 'ms';
-
-            // Wrapper animé (reveal) contenant le point
-            const wrapper = document.createElement('div');
-            wrapper.className = 'annotation-wrapper';
-            wrapper.style.animationDelay = revealDelay;
-
-            // Point cliquable
+            // Le dot est directement l'élément CSS2DObject (pas de wrapper intermédiaire)
             const dotDiv = document.createElement('div');
             dotDiv.className = 'annotation-dot';
             dotDiv.addEventListener('click', () => showInfo(meshName, targetPoint));
-            wrapper.appendChild(dotDiv);
 
-            const dotObj = new CSS2DObject(wrapper);
+            const dotObj = new CSS2DObject(dotDiv);
             dotObj.position.copy(targetPoint);
             landscapeScene.add(dotObj);
 
