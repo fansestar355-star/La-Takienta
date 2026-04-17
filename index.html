@@ -578,7 +578,8 @@
         let landscapeScene, landscapeCamera, landscapeRenderer, landscapeControls, labelRenderer, skyObj, sunVec;
         let mainModel = null;
         let annotations = [];
-        let annotationMeshes = []; // sphères 3D cliquables
+        let annotationMeshes = []; // sphères 3D cliquables (hit area)
+        let annotationGroups = []; // groupes pour animation des anneaux
         let mouseDownCoords = null;
 
         const PART_DESCRIPTIONS = {
@@ -1083,16 +1084,22 @@
                 return hits.length > 0 ? hits[0].object : null;
             }
 
-            // Survol : curseur + highlight doré
+            // Survol : curseur + highlight doré sur tout le groupe
             landscapeRenderer.domElement.addEventListener('mousemove', (e) => {
                 const hit = getAnnotationHit(e);
+                // Reset tous les groupes
                 annotationMeshes.forEach(m => {
-                    m.material.color.setHex(0xffffff);
-                    m.scale.setScalar(1);
+                    m.userData.group.scale.setScalar(1);
+                    m.userData.ring1.material.color.setHex(0xffffff);
+                    m.userData.ring1.material.opacity = 0.55;
+                    m.userData.ring2.material.opacity = 0.28;
                 });
                 if (hit) {
-                    hit.material.color.setHex(0xf9d58b);
-                    hit.scale.setScalar(1.8);
+                    hit.userData.group.scale.setScalar(1.6);
+                    hit.userData.ring1.material.color.setHex(0xf9d58b);
+                    hit.userData.ring1.material.opacity = 1.0;
+                    hit.userData.ring2.material.color.setHex(0xf9d58b);
+                    hit.userData.ring2.material.opacity = 0.7;
                     landscapeRenderer.domElement.style.cursor = 'pointer';
                 } else {
                     landscapeRenderer.domElement.style.cursor = 'default';
@@ -1435,22 +1442,58 @@
                 new THREE.Box3().setFromObject(targetMesh).getCenter(worldPoint);
             }
 
-            // Sphère 3D — colle parfaitement sur le modèle car dans le même espace 3D
-            const dotGeo = new THREE.SphereGeometry(0.13, 14, 14);
-            const dotMat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false });
-            const dotMesh = new THREE.Mesh(dotGeo, dotMat);
-            dotMesh.renderOrder = 999; // toujours visible devant le modèle
-            dotMesh.userData.meshName = meshName;
-            dotMesh.userData.worldPoint = worldPoint.clone();
-
-            // Coordonnées locales dans le modèle → bouge avec lui
             mainModel.updateMatrixWorld(true);
             const localPoint = mainModel.worldToLocal(worldPoint.clone());
-            dotMesh.position.copy(localPoint);
-            mainModel.add(dotMesh);
 
-            annotationMeshes.push(dotMesh);
-            annotations.push({ mesh: dotMesh });
+            // --- Groupe principal ---
+            const group = new THREE.Group();
+            group.position.copy(localPoint);
+
+            // 1. Sphère centrale dorée (zone de clic pour le raycaster)
+            const sphereGeo = new THREE.SphereGeometry(0.10, 14, 14);
+            const sphereMat = new THREE.MeshBasicMaterial({ color: 0xf9d58b, depthTest: false });
+            const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+            sphere.renderOrder = 999;
+            sphere.userData.meshName = meshName;
+            sphere.userData.worldPoint = worldPoint.clone();
+            sphere.userData.group = group;
+
+            // 2. Anneau intérieur — blanc, tourne sur Z
+            const ring1Geo = new THREE.TorusGeometry(0.22, 0.022, 8, 36);
+            const ring1Mat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.55 });
+            const ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
+            ring1.renderOrder = 999;
+
+            // 3. Anneau extérieur — blanc discret, tourne sur X (sens inverse)
+            const ring2Geo = new THREE.TorusGeometry(0.34, 0.012, 8, 36);
+            const ring2Mat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.28 });
+            const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+            ring2.renderOrder = 999;
+            ring2.rotation.x = Math.PI / 3; // incliné pour l'effet gyroscope
+
+            // 4. Quatre petits tirets autour (style réticule)
+            const tickMat = new THREE.MeshBasicMaterial({ color: 0xf9d58b, depthTest: false, transparent: true, opacity: 0.7 });
+            const tickGeo = new THREE.BoxGeometry(0.08, 0.014, 0.014);
+            [0, 90, 180, 270].forEach(deg => {
+                const tick = new THREE.Mesh(tickGeo, tickMat);
+                tick.renderOrder = 999;
+                const rad = deg * Math.PI / 180;
+                tick.position.set(Math.cos(rad) * 0.22, Math.sin(rad) * 0.22, 0);
+                tick.rotation.z = rad;
+                group.add(tick);
+            });
+
+            sphere.userData.ring1 = ring1;
+            sphere.userData.ring2 = ring2;
+
+            group.add(sphere);
+            group.add(ring1);
+            group.add(ring2);
+            mainModel.add(group);
+
+            annotationMeshes.push(sphere);
+            annotationGroups.push({ ring1, ring2 });
+            annotations.push({ group });
         }
 
         /**
@@ -1582,6 +1625,11 @@
                 renderer.render(scene, camera);
             }
             if (step === 2 && landscapeRenderer) {
+                // Animation des anneaux de chaque annotation
+                annotationGroups.forEach(g => {
+                    g.ring1.rotation.z += 0.018;
+                    g.ring2.rotation.y -= 0.011;
+                });
                 landscapeControls.update();
                 landscapeRenderer.render(landscapeScene, landscapeCamera);
                 if (labelRenderer) labelRenderer.render(landscapeScene, landscapeCamera);
