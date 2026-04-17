@@ -273,40 +273,40 @@
             filter: blur(10px);
         }
 
+        /* --- Esthétique Annotation Premium (Style Callout UI) --- */
+
         /* =====================================================
            MARQUEURS ETHNOGRAPHIQUES
+           Losange statique · index doré · titre · divider · catégorie
+           Révélation en cascade à l'entrée dans le paysage
            ===================================================== */
 
+        /* Révélation séquentielle au chargement */
         @keyframes annotationReveal {
-            from { opacity: 0; }
-            to   { opacity: 1; }
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0);    }
         }
 
-        @keyframes dotGlow {
-            0%,100% { opacity: 0.75; transform: scale(1);   }
-            50%      { opacity: 1;    transform: scale(1.35); }
-        }
-
-        /* Cercle doré animé sur le modèle */
+        /* Point simple sur le modèle — marqueur circulaire, statique */
         .annotation-dot {
             width: 7px;
             height: 7px;
-            background: #f9d58b;
+            border: 1.5px solid rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.35);
             border-radius: 50%;
-            box-shadow: 0 0 6px rgba(249,213,139,0.7), 0 0 14px rgba(249,213,139,0.35);
             pointer-events: none;
             flex-shrink: 0;
-            animation: dotGlow 2.2s ease-in-out infinite;
         }
 
-        /* Wrapper animé */
+        /* Wrapper : opaque par défaut, animé à l'init */
         .annotation-wrapper {
             pointer-events: none;
             opacity: 0;
-            animation: annotationReveal 0.5s ease forwards;
+            /* animé via JS avec animationDelay */
+            animation: annotationReveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
 
-        /* Label cliquable — texte flottant, pas de boîte */
+        /* Bloc texte cliquable */
         .annotation-card {
             pointer-events: auto;
             cursor: pointer;
@@ -316,47 +316,103 @@
             user-select: none;
         }
 
+        /* Numéro d'index (01, 02…) */
+        .annotation-index {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px;
+            font-weight: 400;
+            letter-spacing: 0.15em;
+            color: #f9d58b;
+            text-shadow: 0 0 12px rgba(249, 213, 139, 0.4);
+            margin-bottom: 4px;
+            transition: text-shadow 0.25s ease;
+        }
+        .annotation-card:hover .annotation-index {
+            text-shadow: 0 0 18px rgba(249, 213, 139, 0.8);
+        }
+
         /* Titre */
         .annotation-title {
             font-family: 'Inter', sans-serif;
-            font-size: 11px;
+            font-size: 14px;
             font-weight: 400;
-            letter-spacing: 0.20em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.90);
-            text-shadow: 0 0 24px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,1);
+            letter-spacing: 0.03em;
+            color: rgba(255, 255, 255, 0.92);
+            text-shadow: 0 1px 12px rgba(0,0,0,0.99);
+            line-height: 1;
             white-space: nowrap;
-            transition: color 0.2s, letter-spacing 0.3s;
+            transition: color 0.25s ease;
         }
         .annotation-card:hover .annotation-title {
             color: #f9d58b;
-            letter-spacing: 0.26em;
-            text-shadow: 0 0 20px rgba(249,213,139,0.4), 0 0 8px rgba(0,0,0,1);
         }
 
-        /* Séparateur */
-        .annotation-sep {
-            height: 1px;
-            width: 100%;
-            margin: 5px 0 4px;
-            background: rgba(249,213,139,0.25);
-            transition: background 0.2s;
+        /* Séparateur avec shimmer doré en boucle */
+        @keyframes dividerScan {
+            0%   { background-position: -220% 0; }
+            100% { background-position: 220% 0;  }
         }
-        .annotation-card:hover .annotation-sep { background: rgba(249,213,139,0.6); }
+
+        .annotation-divider {
+            height: 1px;
+            margin: 6px 0 5px;
+            min-width: 90px;
+            width: 100%;
+            background: linear-gradient(
+                90deg,
+                rgba(255,255,255,0.28) 0%,
+                rgba(255,255,255,0.28) 35%,
+                rgba(249,213,139,0.95) 50%,
+                rgba(255,255,255,0.28) 65%,
+                rgba(255,255,255,0.28) 100%
+            );
+            background-size: 220% 100%;
+            animation: dividerScan 2.8s ease-in-out infinite;
+        }
+        .annotation-card:hover .annotation-divider {
+            background: rgba(249, 213, 139, 0.75);
+            animation: none;
+        }
 
         /* Catégorie */
         .annotation-subtitle {
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 7.5px;
+            font-size: 8.5px;
             font-weight: 300;
             letter-spacing: 0.12em;
-            color: rgba(249, 213, 139, 0.38);
+            color: rgba(255, 255, 255, 0.38);
+            text-shadow: 0 1px 8px rgba(0,0,0,0.99);
             text-transform: uppercase;
-            text-shadow: 0 0 16px rgba(0,0,0,1);
             white-space: nowrap;
-            transition: color 0.2s;
+            transition: color 0.25s ease;
         }
-        .annotation-card:hover .annotation-subtitle { color: rgba(249,213,139,0.70); }
+        .annotation-card:hover .annotation-subtitle {
+            color: rgba(249, 213, 139, 0.55);
+        }
+
+        /* CTA pulsant sous le sous-titre */
+        @keyframes ctaPulse {
+            0%, 100% { opacity: 0.28; letter-spacing: 0.18em; }
+            50%       { opacity: 0.80; letter-spacing: 0.22em; }
+        }
+
+        .annotation-cta {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 7.5px;
+            font-weight: 400;
+            color: #f9d58b;
+            text-transform: uppercase;
+            white-space: nowrap;
+            margin-top: 7px;
+            animation: ctaPulse 2.2s ease-in-out infinite;
+            text-shadow: 0 0 10px rgba(249,213,139,0.35);
+        }
+        .annotation-card:hover .annotation-cta {
+            animation: none;
+            opacity: 1;
+            letter-spacing: 0.28em;
+            text-shadow: 0 0 16px rgba(249,213,139,0.7);
+        }
 
         /* Panneau d'information */
         #info-card {
@@ -1290,14 +1346,14 @@
         };
 
         const SPATIAL_MAP = {
-            "THATCHED COVER_1": { x:   4, y: 46, z: -14 },  // haut centre
-            "ATTIC_1":          { x:  64, y: 16, z: -16 },  // droite haut
-            "LADDER_2":         { x:  66, y:  0, z: -14 },  // droite milieu
-            "ALTARS":           { x:  62, y: -22, z:-12 },  // droite bas
-            "DRIED_VEGETABLES": { x: -62, y: 28, z:  12 },  // gauche haut
-            "ATTIC_2":          { x: -64, y: 10, z:  14 },  // gauche milieu
-            "FORTRESSES":       { x: -64, y: -8, z:  14 },  // gauche bas
-            "WOOD":             { x: -62, y: -24, z: 12 },  // gauche très bas
+            "THATCHED COVER_1": { x:  18, y: 34, z: -12 },
+            "ATTIC_1":          { x:  38, y: 22, z: -26 },
+            "LADDER_2":         { x:  26, y:  6, z: -18 },
+            "ATTIC_2":          { x: -32, y: 20, z:  22 },
+            "FORTRESSES":       { x: -38, y:  4, z:  26 },
+            "ALTARS":           { x:  30, y: -6, z: -20 },
+            "WOOD":             { x:  22, y: 12, z:  32 },
+            "DRIED_VEGETABLES": { x: -24, y: 28, z: -18 },
         };
 
         function addAnnotation(meshName, text) {
@@ -1335,13 +1391,14 @@
             dotObj.position.copy(targetPoint);
             landscapeScene.add(dotObj);
 
-            // 5. Délai de révélation en cascade
+            // 5. Index et délai de révélation
             const orderIdx = ANNOTATION_ORDER.indexOf(meshName);
             const idx = orderIdx >= 0 ? orderIdx : annotations.length;
-            const revealDelay = (idx * 260 + 800) + 'ms';
+            const indexStr = String(idx + 1).padStart(2, '0');
+            const revealDelay = (idx * 280 + 900) + 'ms';
             const isLeft = off.x < 0;
 
-            // 6. Chip texte
+            // 6. Bloc texte
             const cardRoot = document.createElement('div');
             const wrapper = document.createElement('div');
             wrapper.className = 'annotation-wrapper';
@@ -1354,20 +1411,32 @@
             card.style.textAlign  = isLeft ? 'right'    : 'left';
             card.addEventListener('click', () => showInfo(meshName, targetPoint, labelPos));
 
+            const indexEl = document.createElement('div');
+            indexEl.className = 'annotation-index';
+            indexEl.textContent = indexStr;
+
             const titleEl = document.createElement('div');
             titleEl.className = 'annotation-title';
             titleEl.textContent = PART_DESCRIPTIONS[meshName]?.title ?? text;
 
-            const sepEl = document.createElement('div');
-            sepEl.className = 'annotation-sep';
+            const dividerEl = document.createElement('div');
+            dividerEl.className = 'annotation-divider';
 
             const subtitleEl = document.createElement('div');
             subtitleEl.className = 'annotation-subtitle';
             subtitleEl.textContent = ANNOTATION_SUBTITLE[meshName] ?? 'Architecture Batammariba';
 
+            const ctaEl = document.createElement('div');
+            ctaEl.className = 'annotation-cta';
+            ctaEl.textContent = '→ Explorer';
+            // Stagger le CTA pour qu'il ne pulse pas en même temps que les autres
+            ctaEl.style.animationDelay = (idx * 0.4) + 's';
+
+            card.appendChild(indexEl);
             card.appendChild(titleEl);
-            card.appendChild(sepEl);
+            card.appendChild(dividerEl);
             card.appendChild(subtitleEl);
+            card.appendChild(ctaEl);
             wrapper.appendChild(card);
             cardRoot.appendChild(wrapper);
 
