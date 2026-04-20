@@ -296,13 +296,20 @@
             border-radius: 50%;
             pointer-events: none;
             flex-shrink: 0;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .annotation-dot.visible {
+            opacity: 1;
         }
 
-        /* Wrapper : opaque par défaut, animé à l'init */
+        /* Wrapper : caché par défaut, révélé via JS */
         .annotation-wrapper {
             pointer-events: none;
             opacity: 0;
-            /* animé via JS avec animationDelay */
+        }
+        .annotation-wrapper.visible {
+            pointer-events: none;
             animation: annotationReveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
 
@@ -503,6 +510,76 @@
         }
 
         /* =====================================================
+           BOUTON DÉCOUVRIR — toggle annotations
+           ===================================================== */
+        #explore-btn {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 20;
+            background: rgba(20, 10, 28, 0.82);
+            border: 1px solid rgba(249, 213, 139, 0.55);
+            color: #f9d58b;
+            padding: 14px 22px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.62rem;
+            font-weight: 400;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
+            backdrop-filter: blur(16px);
+            align-items: center;
+            gap: 10px;
+            transition: background 0.3s ease, letter-spacing 0.3s ease, border-color 0.3s ease;
+            animation: explorePulse 2.8s ease-in-out infinite;
+            box-shadow: 0 0 0 rgba(249,213,139,0);
+        }
+        #explore-btn.shown { display: flex; }
+
+        @keyframes explorePulse {
+            0%, 100% {
+                box-shadow: 0 0 14px rgba(249,213,139,0.1), 0 0 0 0 rgba(249,213,139,0);
+                border-color: rgba(249,213,139,0.45);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(249,213,139,0.38), 0 0 80px rgba(249,213,139,0.08);
+                border-color: rgba(249,213,139,0.95);
+            }
+        }
+
+        .explore-icon {
+            font-size: 11px;
+            display: inline-block;
+            animation: spinDiamond 5s linear infinite;
+            transition: transform 0.4s ease;
+        }
+
+        @keyframes spinDiamond {
+            0%   { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #explore-btn:hover {
+            background: rgba(249,213,139,0.14);
+            letter-spacing: 4.5px;
+            border-color: #f9d58b;
+        }
+        #explore-btn:active { transform: scale(0.97); }
+
+        #explore-btn.active {
+            background: rgba(249,213,139,0.1);
+            border-color: rgba(249,213,139,0.5);
+            animation: none;
+            box-shadow: 0 0 20px rgba(249,213,139,0.18);
+        }
+        #explore-btn.active .explore-icon {
+            animation: none;
+            transform: rotate(45deg);
+        }
+
+        /* =====================================================
            RESPONSIVE MOBILE
            ===================================================== */
         @media (max-width: 600px) {
@@ -587,6 +664,13 @@
                 right: 10px;
                 font-size: 10px;
             }
+            #explore-btn {
+                bottom: max(14px, env(safe-area-inset-bottom, 14px));
+                right: 10px;
+                padding: 13px 18px;
+                font-size: 0.58rem;
+                letter-spacing: 2.5px;
+            }
         }
     </style>
 </head>
@@ -610,16 +694,24 @@
         <div id="ar-unsupported">AR non disponible sur cet appareil</div>
     </div>
 
-    <!-- Model Viewer caché — utilisé uniquement pour l'AR -->
+    <!-- Model Viewer — utilisé pour l'AR via slot natif -->
     <model-viewer
         id="ar-model"
         src="La_Takienta.glb"
         ar
         ar-modes="webxr scene-viewer quick-look"
         ar-scale="fixed"
-        style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; top:-9999px; left:-9999px;"
+        style="position:fixed; width:1px; height:1px; opacity:0; pointer-events:none; bottom:0; right:0;"
         shadow-intensity="1">
+        <button slot="ar-button" id="ar-slot-btn"
+            style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;overflow:hidden;"></button>
     </model-viewer>
+
+    <!-- Bouton toggle annotations -->
+    <button id="explore-btn">
+        <span class="explore-icon">◆</span>
+        <span class="explore-text">Découvrir</span>
+    </button>
 
     <div id="landscape-container"></div>
 
@@ -656,6 +748,44 @@
         let landscapeScene, landscapeCamera, landscapeRenderer, landscapeControls, labelRenderer, skyObj, sunVec;
         let mainModel = null; // Stockage du modèle pour les annotations
         let annotations = []; // Liste des labels actifs
+        let annotationsVisible = false;
+
+        function showAnnotations() {
+            annotations.forEach(ann => {
+                ann.line.visible = true;
+                ann.dotLabel.element.classList.add('visible');
+                const wrapper = ann.label.element.querySelector('.annotation-wrapper');
+                if (wrapper) {
+                    wrapper.classList.remove('visible');
+                    void wrapper.offsetWidth; // force reflow pour relancer l'animation
+                    wrapper.classList.add('visible');
+                }
+            });
+        }
+
+        function hideAnnotations() {
+            annotations.forEach(ann => {
+                ann.line.visible = false;
+                ann.dotLabel.element.classList.remove('visible');
+                const wrapper = ann.label.element.querySelector('.annotation-wrapper');
+                if (wrapper) wrapper.classList.remove('visible');
+            });
+        }
+
+        function toggleAnnotations() {
+            annotationsVisible = !annotationsVisible;
+            const btn = document.getElementById('explore-btn');
+            const txt = btn.querySelector('.explore-text');
+            if (annotationsVisible) {
+                showAnnotations();
+                btn.classList.add('active');
+                txt.textContent = 'Masquer';
+            } else {
+                hideAnnotations();
+                btn.classList.remove('active');
+                txt.textContent = 'Découvrir';
+            }
+        }
 
         const PART_DESCRIPTIONS = {
             "LADDER_2": { title: "Échelle Sacrée", desc: "Permet l'accès aux niveaux supérieurs. Elle symbolise le lien entre la terre et le ciel." },
@@ -802,33 +932,25 @@
             // Bouton retour depuis le paysage
             document.getElementById('back-btn').addEventListener('click', nextStep);
 
-            // Bouton AR
+            // Bouton toggle annotations
+            document.getElementById('explore-btn').addEventListener('click', toggleAnnotations);
+
+            // Bouton AR — déclenche via le slot natif de model-viewer
             document.getElementById('ar-btn').addEventListener('click', () => {
+                const slotBtn = document.getElementById('ar-slot-btn');
                 const mv = document.getElementById('ar-model');
-                if (!mv) return;
-                // Attends que model-viewer soit prêt avant d'activer l'AR
-                const tryAR = () => {
-                    if (typeof mv.activateAR === 'function') {
-                        mv.activateAR().catch(() => {
-                            const msg = document.getElementById('ar-unsupported');
-                            msg.style.display = 'block';
-                            setTimeout(() => { msg.style.display = 'none'; }, 3500);
-                        });
-                    } else {
-                        const msg = document.getElementById('ar-unsupported');
-                        msg.style.display = 'block';
-                        setTimeout(() => { msg.style.display = 'none'; }, 3500);
-                    }
+                if (!slotBtn || !mv) return;
+
+                const doClick = () => {
+                    slotBtn.style.pointerEvents = 'auto';
+                    slotBtn.click();
+                    slotBtn.style.pointerEvents = 'none';
                 };
-                // Si le modèle n'est pas encore chargé, attends l'événement load
+
                 if (mv.loaded) {
-                    tryAR();
+                    doClick();
                 } else {
-                    mv.addEventListener('load', tryAR, { once: true });
-                    // Charge le fallback GitHub si le fichier local est absent
-                    if (!mv.src || mv.src === '') {
-                        mv.src = 'https://raw.githubusercontent.com/fansestar355-star/La-Takienta/main/La_Takienta.glb';
-                    }
+                    mv.addEventListener('load', doClick, { once: true });
                 }
             });
 
@@ -1009,13 +1131,21 @@
                         nextBtn.style.display  = 'none';
                         arBtn.style.display    = 'inline-block';
                         backBtn.style.display  = 'inline-block';
+                        // Affiche le bouton Découvrir
+                        document.getElementById('explore-btn').classList.add('shown');
                     } else {
-                        // Globe : remet le bouton principal
+                        // Globe : remet le bouton principal, cache Découvrir
                         nextBtn.style.display  = 'inline-block';
                         arBtn.style.display    = 'none';
                         backBtn.style.display  = 'none';
                         document.getElementById('ar-unsupported').style.display = 'none';
                         nextBtn.innerText = step === 1 ? "Voir la Takienta" : "Explorer le Togo";
+                        // Cache le bouton Découvrir et reset les annotations
+                        const explBtn = document.getElementById('explore-btn');
+                        explBtn.classList.remove('shown', 'active');
+                        document.querySelector('.explore-text').textContent = 'Découvrir';
+                        annotationsVisible = false;
+                        hideAnnotations();
                     }
                 }
 
@@ -1547,6 +1677,9 @@
             const cardObj = new CSS2DObject(cardRoot);
             cardObj.position.copy(labelPos);
             landscapeScene.add(cardObj);
+
+            // Cachées par défaut — révélées via le bouton Découvrir
+            line.visible = false;
 
             annotations.push({ label: cardObj, line, dotLabel: dotObj });
         }
