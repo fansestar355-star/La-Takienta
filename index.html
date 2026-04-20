@@ -313,8 +313,12 @@
             animation: annotationReveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
 
-        /* Bloc texte cliquable */
+        /* Bloc texte cliquable — inactif tant que le wrapper n'est pas visible */
         .annotation-card {
+            pointer-events: none;
+            cursor: pointer;
+        }
+        .annotation-wrapper.visible .annotation-card {
             pointer-events: auto;
             cursor: pointer;
             display: flex;
