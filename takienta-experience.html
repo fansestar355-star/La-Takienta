@@ -1160,6 +1160,75 @@
             });
         }
 
+        function playDjembeIntro() {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+
+            const masterGain = ctx.createGain();
+            const comp = ctx.createDynamicsCompressor();
+            comp.threshold.value = -18;
+            comp.ratio.value = 4;
+            masterGain.connect(comp);
+            comp.connect(ctx.destination);
+
+            // Fade out sur les 1.5 dernières secondes
+            masterGain.gain.setValueAtTime(1, ctx.currentTime);
+            masterGain.gain.setValueAtTime(1, ctx.currentTime + 6.5);
+            masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 8.5);
+
+            function hit(time, freq, freqEnd, vol, decay, noiseVol) {
+                // Corps du djembé : oscillateur avec chute de fréquence
+                const osc = ctx.createOscillator();
+                const og  = ctx.createGain();
+                osc.frequency.setValueAtTime(freq, time);
+                osc.frequency.exponentialRampToValueAtTime(Math.max(freqEnd, 15), time + decay);
+                og.gain.setValueAtTime(vol, time);
+                og.gain.exponentialRampToValueAtTime(0.001, time + decay);
+                osc.connect(og); og.connect(masterGain);
+                osc.start(time); osc.stop(time + decay + 0.05);
+
+                // Transitoire d'attaque : bruit bref
+                if (noiseVol > 0) {
+                    const len  = Math.floor(ctx.sampleRate * 0.055);
+                    const buf  = ctx.createBuffer(1, len, ctx.sampleRate);
+                    const data = buf.getChannelData(0);
+                    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+                    const ns  = ctx.createBufferSource();
+                    const ng  = ctx.createGain();
+                    ns.buffer = buf;
+                    ng.gain.setValueAtTime(noiseVol, time);
+                    ng.gain.exponentialRampToValueAtTime(0.001, time + 0.055);
+                    ns.connect(ng); ng.connect(masterGain);
+                    ns.start(time);
+                }
+            }
+
+            // 3 types de frappes djembé
+            const bass = t => hit(t,  72,  32, 1.0, 0.65, 0.25); // GUN — grave, boom
+            const tone = t => hit(t, 230, 150, 0.70, 0.35, 0.10); // GO  — médium, sonnant
+            const slap = t => hit(t, 530, 270, 0.50, 0.09, 0.80); // PA  — aigu, sec, claquant
+
+            const now = ctx.currentTime + 0.05;
+            const B   = 0.5; // 1 temps = 0.5s → 120 bpm
+
+            // Rythme sur 4 mesures × 2 s = 8 secondes
+            for (let i = 0; i < 4; i++) {
+                const t = now + i * 4 * B;
+                bass(t);
+                tone(t + B * 0.5);
+                slap(t + B * 0.75);
+                bass(t + B);
+                tone(t + B * 1.5);
+                slap(t + B * 1.75);
+                tone(t + B * 2);
+                slap(t + B * 2.5);
+                bass(t + B * 3);
+                slap(t + B * 3.5);
+                tone(t + B * 3.75);
+            }
+        }
+
         async function nextStep() {
             if (isTransitioning) return;
             isTransitioning = true;
@@ -1256,6 +1325,9 @@
                 if (step === 2) {
                     // Récupère la position monde de la croix Togo
                     marker.getWorldPosition(lookAtPos);
+
+                    // Démarre le rythme djembé au moment du zoom sur le Togo
+                    playDjembeIntro();
 
                     // Phase 1 : zoom serré sur le Togo (distance ~120, hors du globe)
                     const closePos  = latLonToVector3(10.1, 0.82, 120);
