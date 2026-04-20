@@ -787,7 +787,8 @@
         {
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "topojson-client": "https://esm.sh/topojson-client@3"
             }
         }
     </script>
@@ -800,6 +801,7 @@
         import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
         import { Sky } from 'three/addons/objects/Sky.js';
         import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+        import * as topojson from 'topojson-client';
 
         // --- Globals ---
         let scene, camera, renderer, globe, earthGroup, atmosphere, marker, controls;
@@ -1071,31 +1073,33 @@
         }
 
         async function loadCountryBorders() {
+            // depthTest:false : lignes toujours au-dessus du globe, jamais cachées
+            const borderMat = new THREE.LineBasicMaterial({
+                color: 0xf9d58b, transparent: true, opacity: 0.75,
+                depthTest: false, depthWrite: false
+            });
+            const togoMat = new THREE.LineBasicMaterial({
+                color: 0xffffff, transparent: true, opacity: 1.0,
+                depthTest: false, depthWrite: false
+            });
+
             try {
-                const res = await fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json');
-                const data = await res.json();
-                // Frontières générales : or visible, pays reconnaissables
-                const borderMat = new THREE.LineBasicMaterial({ color: 0xf9d58b, transparent: true, opacity: 0.52 });
-                // Togo : or vif saturé, clairement lisible
-                const togoMat  = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: false, opacity: 1.0 });
-                data.features.forEach(feature => {
-                    const isTogo = feature.properties.name === "Togo";
+                // unpkg + world-atlas : CDN fiable, pas de rate-limit
+                const res = await fetch('https://unpkg.com/world-atlas@2/countries-50m.json');
+                const world = await res.json();
+                // Convertit topojson → geojson
+                const countries = topojson.feature(world, world.objects.countries);
+                // Code ISO numérique du Togo : 768
+                countries.features.forEach(feature => {
+                    const isTogo = String(feature.id) === '768';
+                    const mat    = isTogo ? togoMat : borderMat;
                     const coords = feature.geometry.coordinates;
                     const type   = feature.geometry.type;
-                    const drawAll = (ring) => {
-                        if (isTogo) {
-                            drawRing(ring, togoMat, 100.5);
-                        } else {
-                            drawRing(ring, borderMat, 100.5);
-                        }
-                    };
-                    if (type === 'Polygon') {
-                        coords.forEach(drawAll);
-                    } else if (type === 'MultiPolygon') {
-                        coords.forEach(poly => poly.forEach(drawAll));
-                    }
+                    const drawAll = ring => drawRing(ring, mat, 101.2);
+                    if (type === 'Polygon')           coords.forEach(drawAll);
+                    else if (type === 'MultiPolygon') coords.forEach(p => p.forEach(drawAll));
                 });
-            } catch (e) { console.error(e); }
+            } catch (e) { console.warn('Bordures non chargées :', e); }
         }
 
         function drawRing(ring, mat, radius = 100.5) {
