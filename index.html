@@ -836,6 +836,42 @@
             });
         }
 
+        // Audio ambiance — démarre à la seconde 50
+        let _ambianceAudio = null;
+        let _ambianceFadeOut = null;
+
+        function playAmbianceAudio() {
+            if (_ambianceAudio) return;
+            const audio = new Audio('WhatsApp Video 2026-04-20 at 16.40.53.mp3');
+            audio.currentTime = 50;
+            audio.volume = 0;
+            audio.play().catch(() => {});
+            _ambianceAudio = audio;
+
+            let vol = 0;
+            const fadeIn = setInterval(() => {
+                vol = Math.min(vol + 0.04, 1);
+                audio.volume = vol;
+                if (vol >= 1) clearInterval(fadeIn);
+            }, 80);
+        }
+
+        function stopAmbianceAudio() {
+            if (!_ambianceAudio) return;
+            const audio = _ambianceAudio;
+            let vol = audio.volume;
+            clearInterval(_ambianceFadeOut);
+            _ambianceFadeOut = setInterval(() => {
+                vol = Math.max(vol - 0.05, 0);
+                audio.volume = vol;
+                if (vol <= 0) {
+                    clearInterval(_ambianceFadeOut);
+                    audio.pause();
+                    _ambianceAudio = null;
+                }
+            }, 80);
+        }
+
         function toggleAnnotations() {
             annotationsVisible = !annotationsVisible;
             const btn = document.getElementById('explore-btn');
@@ -844,10 +880,12 @@
                 showAnnotations();
                 btn.classList.add('active');
                 txt.textContent = 'Masquer';
+                playAmbianceAudio();
             } else {
                 hideAnnotations();
                 btn.classList.remove('active');
                 txt.textContent = 'Découvrir';
+                stopAmbianceAudio();
             }
         }
 
@@ -1273,6 +1311,7 @@
                         document.querySelector('.explore-text').textContent = 'Découvrir';
                         annotationsVisible = false;
                         hideAnnotations();
+                        stopAmbianceAudio();
                     }
                 }
 
@@ -1959,6 +1998,7 @@
             document.querySelector('.explore-text').textContent = 'Découvrir';
             annotationsVisible = false;
             hideAnnotations();
+            stopAmbianceAudio();
             document.getElementById('info-card').classList.remove('active');
             if (orbitTween) { orbitTween.kill(); orbitTween = null; }
             if (landscapeControls) landscapeControls.autoRotate = false;
