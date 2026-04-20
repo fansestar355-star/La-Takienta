@@ -975,6 +975,10 @@
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.autoRotate = false;
+            // Interdit à l'utilisateur de faire tourner le globe manuellement
+            controls.enableRotate = false;
+            controls.enablePan = false;
+            controls.enableZoom = false;
 
             const startPos = latLonToVector3(locations[0].lat, locations[0].lon, locations[0].distance);
             camera.position.copy(startPos);
@@ -1339,10 +1343,6 @@
             landscapeControls.autoRotateSpeed = 0.2;
             landscapeControls.minDistance = 50;
             landscapeControls.maxDistance = 350;
-            // Interdit la rotation et le déplacement manuels
-            landscapeControls.enableRotate = false;
-            landscapeControls.enablePan = false;
-            landscapeControls.enableZoom = false;
 
             const ambient = new THREE.AmbientLight(0xffffff, 1.2);
             landscapeScene.add(ambient);
