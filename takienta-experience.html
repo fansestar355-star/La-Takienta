@@ -1161,117 +1161,26 @@
         }
 
         function playDjembeIntro() {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            if (!AudioCtx) return;
-            const ctx = new AudioCtx();
+            const audio = new Audio('djiembe.mp3');
+            audio.volume = 0;
+            audio.play().catch(() => {});
 
-            // ── Routage principal ──────────────────────────────────────────
-            const master = ctx.createGain();
-            const comp   = ctx.createDynamicsCompressor();
-            comp.threshold.value = -14; comp.ratio.value = 5;
-            master.connect(comp); comp.connect(ctx.destination);
+            // Fade in
+            let vol = 0;
+            const fadeIn = setInterval(() => {
+                vol = Math.min(vol + 0.05, 1);
+                audio.volume = vol;
+                if (vol >= 1) clearInterval(fadeIn);
+            }, 80);
 
-            // Fade in doux → tenu → fade out
-            master.gain.setValueAtTime(0, ctx.currentTime);
-            master.gain.linearRampToValueAtTime(0.85, ctx.currentTime + 1.8);
-            master.gain.setValueAtTime(0.85, ctx.currentTime + 6.5);
-            master.gain.linearRampToValueAtTime(0, ctx.currentTime + 9.5);
-
-            // ── Réverbération longue (espace sacré) ───────────────────────
-            function makeReverb(dur, decay) {
-                const len = Math.floor(ctx.sampleRate * dur);
-                const buf = ctx.createBuffer(2, len, ctx.sampleRate);
-                for (let c = 0; c < 2; c++) {
-                    const d = buf.getChannelData(c);
-                    for (let i = 0; i < len; i++)
-                        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
-                }
-                const conv = ctx.createConvolver();
-                conv.buffer = buf;
-                return conv;
-            }
-            const reverb    = makeReverb(4, 1.8);
-            const revGain   = ctx.createGain(); revGain.gain.value = 0.55;
-            const dryGain   = ctx.createGain(); dryGain.gain.value = 0.45;
-            reverb.connect(master); revGain.connect(reverb);
-            dryGain.connect(master);
-
-            function send(node) { node.connect(dryGain); node.connect(revGain); }
-
-            // ── Tam-tam cérémoniel (frappe grave lente) ───────────────────
-            function tamtam(time, freq, vol, decay) {
-                const osc = ctx.createOscillator();
-                const g   = ctx.createGain();
-                osc.frequency.setValueAtTime(freq, time);
-                osc.frequency.exponentialRampToValueAtTime(freq * 0.38, time + decay);
-                g.gain.setValueAtTime(vol, time);
-                g.gain.exponentialRampToValueAtTime(0.001, time + decay);
-                osc.connect(g); send(g);
-                osc.start(time); osc.stop(time + decay + 0.1);
-
-                // impact bref
-                const bLen = Math.floor(ctx.sampleRate * 0.12);
-                const b    = ctx.createBuffer(1, bLen, ctx.sampleRate);
-                const bd   = b.getChannelData(0);
-                for (let i = 0; i < bLen; i++) bd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bLen, 3);
-                const ns = ctx.createBufferSource(); ns.buffer = b;
-                const ng = ctx.createGain(); ng.gain.value = vol * 0.35;
-                ns.connect(ng); send(ng); ns.start(time);
-            }
-
-            // ── Drone atmosphérique (bourdon grave) ───────────────────────
-            function drone(time, freq, vol, dur) {
-                [1, 1.5, 2, 3].forEach((ratio, i) => {
-                    const osc = ctx.createOscillator();
-                    const g   = ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.value = freq * ratio;
-                    const amp = vol / (i + 1);
-                    g.gain.setValueAtTime(0, time);
-                    g.gain.linearRampToValueAtTime(amp, time + 2);
-                    g.gain.setValueAtTime(amp, time + dur - 2);
-                    g.gain.linearRampToValueAtTime(0, time + dur);
-                    osc.connect(g); send(g);
-                    osc.start(time); osc.stop(time + dur);
-                });
-            }
-
-            // ── Mélodie pentatonique (émotion, style kora) ────────────────
-            function note(time, freq, vol, dur) {
-                const osc = ctx.createOscillator();
-                osc.type = 'triangle';
-                osc.frequency.value = freq;
-                const g = ctx.createGain();
-                g.gain.setValueAtTime(0, time);
-                g.gain.linearRampToValueAtTime(vol, time + 0.015);
-                g.gain.exponentialRampToValueAtTime(vol * 0.4, time + dur * 0.25);
-                g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
-                osc.connect(g); send(g);
-                osc.start(time); osc.stop(time + dur + 0.05);
-            }
-
-            const now = ctx.currentTime + 0.1;
-
-            // Bourdon dès le début — 9 secondes
-            drone(now, 55, 0.18, 9);
-
-            // Tam-tams lents et solennels (rythme cardiaque lent)
-            tamtam(now,       62, 0.95, 1.4);
-            tamtam(now + 2.2, 58, 0.85, 1.4);
-            tamtam(now + 4.0, 60, 0.90, 1.4);
-            tamtam(now + 5.8, 55, 0.75, 1.8);
-
-            // Mélodie pentatonique en la mineur — montée douce puis descente
-            // La, Do, Ré, Mi, Sol  (A3, C4, D4, E4, G4)
-            const P = [220, 261.6, 293.7, 329.6, 392.0];
-            note(now + 1.0, P[0],     0.28, 1.2);
-            note(now + 2.0, P[1],     0.24, 1.0);
-            note(now + 2.9, P[2],     0.26, 0.9);
-            note(now + 3.7, P[4],     0.30, 1.4);
-            note(now + 4.9, P[3],     0.22, 1.0);
-            note(now + 5.7, P[1],     0.20, 0.8);
-            note(now + 6.4, P[0],     0.18, 2.2); // note finale, longue
-            note(now + 6.6, P[0] / 2, 0.12, 2.5); // octave basse en soutien
+            // Fade out à partir de 7s
+            setTimeout(() => {
+                const fadeOut = setInterval(() => {
+                    vol = Math.max(vol - 0.04, 0);
+                    audio.volume = vol;
+                    if (vol <= 0) { clearInterval(fadeOut); audio.pause(); }
+                }, 80);
+            }, 7000);
         }
 
         async function nextStep() {
