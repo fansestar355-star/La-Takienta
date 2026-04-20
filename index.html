@@ -145,12 +145,15 @@
         #ar-unsupported {
             display: none;
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 9px;
-            letter-spacing: 1.5px;
-            color: rgba(249, 213, 139, 0.45);
+            font-size: 10px;
+            letter-spacing: 1.2px;
+            color: rgba(249, 213, 139, 0.7);
             text-transform: uppercase;
-            margin-top: 8px;
             text-align: center;
+            padding: 8px 14px;
+            border: 1px solid rgba(249, 213, 139, 0.25);
+            border-radius: 6px;
+            background: rgba(0,0,0,0.3);
         }
 
         #landscape-container {
@@ -848,14 +851,38 @@
         }
 
         const PART_DESCRIPTIONS = {
-            "LADDER_2": { title: "Échelle Sacrée", desc: "Permet l'accès aux niveaux supérieurs. Elle symbolise le lien entre la terre et le ciel." },
-            "ALTARS": { title: "Autels Koutammakou", desc: "Espace spirituel dédié aux ancêtres, situé à l'entrée de la maison batammariba." },
-            "ATTIC_1": { title: "Grenier Homme", desc: "Réservé à l'homme de la maison pour stocker les récoltes de mil et de sorgho, protégé par un toit en chaume." },
-            "ATTIC_2": { title: "Grenier Femme", desc: "Espace de stockage réservé à la femme, ventilé naturellement pour conserver ses denrées et provisions." },
-            "WOOD": { title: "Bois de Construction", desc: "Poutres et chevrons en bois dur prélevés dans la forêt environnante, essentiels à la charpente et à la solidité de la structure." },
-            "DRIED_VEGETABLES": { title: "Légumes Séchés", desc: "Provisions alimentaires séchées et conservées dans la takienta, témoignant du savoir-faire ancestral de conservation des denrées." },
-            "FORTRESSES": { title: "Murs Défensifs", desc: "Faits de terre crue massive pour protéger les habitants contre les ennemis et les éléments." },
-            "THATCHED COVER_1": { title: "Toit en Chaume", desc: "Structure conique amovible permettant une aération optimale pendant la saison sèche." }
+            "LADDER_2": {
+                title: "Échelle Sacrée",
+                desc: "Taillée dans un tronc d'arbre unique, cette échelle relie le rez-de-chaussée à la terrasse supérieure. Son inclinaison prononcée est intentionnelle : chaque ascension est un acte symbolique, une transition entre le monde terrestre des animaux et le domaine des vivants et des ancêtres. Chez les Batammariba, monter cette échelle, c'est s'élever vers la lumière et la vie communautaire."
+            },
+            "ALTARS": {
+                title: "Autels des Ancêtres",
+                desc: "Situés à l'entrée de la takienta, ces autels sont le cœur spirituel de la demeure. Les Batammariba y honorent les esprits protecteurs et les ancêtres défunts par des offrandes et des sacrifices de poules ou de pintades. Les crânes et cornes des animaux sacrifiés sont fixés au-dessus de l'entrée en signe de protection divine. La takienta n'est pas qu'une maison : c'est un temple vivant."
+            },
+            "ATTIC_1": {
+                title: "Grenier de l'Homme",
+                desc: "Niché dans l'une des tourelles cylindriques, ce grenier est la propriété exclusive du maître de maison. Il y conserve ses récoltes de mil et de sorgho, soigneusement séchées avant d'être stockées à l'abri de l'humidité et des rongeurs. Son emplacement en hauteur n'est pas anodin : il symbolise la responsabilité de l'homme comme pourvoyeur et gardien de la famille."
+            },
+            "ATTIC_2": {
+                title: "Grenier de la Femme",
+                desc: "Distinct et inviolable, ce grenier appartient entièrement à la femme. Elle y gère ses propres provisions : légumineuses, condiments, réserves spéciales. Cette séparation reflète l'organisation sociale batammariba où homme et femme ont des sphères d'autonomie bien définies. La femme y puise en pleine souveraineté pour nourrir sa famille tout au long de la saison sèche."
+            },
+            "WOOD": {
+                title: "Réceptacles des Esprits",
+                desc: "Ces pièces de bois placées à l'entrée de la takienta ne sont pas de simples éléments de construction : ce sont des réceptacles sacrés dans lesquels résident les esprits des ancêtres. Selon la tradition batammariba, les défunts ne quittent jamais vraiment le foyer familial — ils y demeurent, logés dans ces bois rituels, pour veiller sur les vivants. Toucher ou déplacer ces pièces sans permission est considéré comme un acte grave. Chaque matin, les membres de la famille leur adressent une pensée ou une offrande, maintenant ainsi le lien sacré entre le monde des vivants et celui des ancêtres."
+            },
+            "DRIED_VEGETABLES": {
+                title: "Provisions Séchées",
+                desc: "La terrasse supérieure sert de séchoir naturel après les récoltes : gombos, haricots, herbes aromatiques y sont exposés au soleil ardant du Sahel. Une fois séchés, ces aliments sont stockés dans la takienta pour traverser la longue saison sèche. Ce savoir-faire ancestral de conservation garantit la survie alimentaire de la famille pendant les mois sans pluie."
+            },
+            "FORTRESSES": {
+                title: "Murs de Banco",
+                desc: "Érigés en argile compressée mêlée de paille et de balle de mil, ces murs épais de 40 à 60 cm constituent à la fois l'armure et l'isolant thermique de la takienta. Conçus à l'origine pour résister aux razzias intertribales, ils ont aussi tenu tête aux colonisateurs allemands au XIXe siècle. La takienta ne possède qu'une seule ouverture basse, forçant tout intrus à se pencher — une défense redoutable."
+            },
+            "THATCHED COVER_1": {
+                title: "Toit Conique en Chaume",
+                desc: "Couronnant chaque tourelle-grenier, ce toit conique est tissé de graminées sauvages récoltées en brousse. Il est amovible : on le soulève pour verser les grains à l'intérieur du grenier lors de la récolte, puis on le repose pour protéger les stocks. Sa tresse serrée assure une ventilation naturelle tout en repoussant la pluie et les insectes. Son entretien est une activité collective, renouvelée tous les deux à trois ans."
+            }
         };
 
         let isTransitioning = false;
@@ -993,8 +1020,8 @@
             window.addEventListener('resize', onWindowResize);
             document.getElementById('next-btn').addEventListener('click', nextStep);
 
-            // Bouton retour depuis le paysage
-            document.getElementById('back-btn').addEventListener('click', nextStep);
+            // Bouton retour depuis le paysage — animation de décollage
+            document.getElementById('back-btn').addEventListener('click', returnToSpace);
 
             // Bouton toggle annotations
             document.getElementById('explore-btn').addEventListener('click', toggleAnnotations);
@@ -1075,7 +1102,7 @@
         async function loadCountryBorders() {
             // depthTest:false : lignes toujours au-dessus du globe, jamais cachées
             const borderMat = new THREE.LineBasicMaterial({
-                color: 0xf9d58b, transparent: true, opacity: 0.75,
+                color: 0xf9d58b, transparent: false, opacity: 1.0,
                 depthTest: false, depthWrite: false
             });
             const togoMat = new THREE.LineBasicMaterial({
@@ -1136,6 +1163,10 @@
             if (isTransitioning) return;
             isTransitioning = true;
 
+            // Tue tout tween GSAP en cours sur la caméra (évite les conflits avec runAnim)
+            gsap.killTweensOf(camera.position);
+            if (controls) controls.enabled = false;
+
             const uiTop = document.getElementById('ui-top');
             const uiBottom = document.getElementById('ui-bottom');
             uiTop.classList.add('fade');
@@ -1179,7 +1210,6 @@
                     } else {
                         // Retour au globe — remet l'atmosphère visible
                         if (atmosphere) atmosphere.visible = true;
-                        controls.enabled = true;
                         landscapeContainer.style.display = 'none';
                         landscapeContainer.style.opacity = '0';
                         canvas.style.transition = 'opacity 1s ease-out';
@@ -1193,10 +1223,17 @@
                     const arBtn    = document.getElementById('ar-btn');
                     const backBtn  = document.getElementById('back-btn');
                     if (step === 2) {
-                        // Paysage : cache le bouton principal, montre AR + retour
+                        // Paysage : cache le bouton principal, montre AR (ou message) + retour
                         nextBtn.style.display  = 'none';
-                        arBtn.style.display    = 'inline-block';
                         backBtn.style.display  = 'inline-block';
+                        const mv = document.getElementById('ar-model');
+                        if (mv && mv.canActivateAR) {
+                            arBtn.style.display = 'inline-block';
+                            document.getElementById('ar-unsupported').style.display = 'none';
+                        } else {
+                            arBtn.style.display = 'none';
+                            document.getElementById('ar-unsupported').style.display = 'block';
+                        }
                         // Affiche le bouton Découvrir
                         document.getElementById('explore-btn').classList.add('shown');
                     } else {
@@ -1216,9 +1253,6 @@
                 }
 
                 if (step === 2) {
-                    // Désactive OrbitControls pour éviter qu'il combatte le lerp manuel
-                    controls.enabled = false;
-
                     // Récupère la position monde de la croix Togo
                     marker.getWorldPosition(lookAtPos);
 
@@ -1635,14 +1669,14 @@
         ];
 
         const ANNOTATION_SUBTITLE = {
-            "LADDER_2":         "Circulation verticale",
-            "ALTARS":           "Espace spirituel",
-            "ATTIC_1":          "Stockage · Grenier masculin",
-            "ATTIC_2":          "Stockage · Grenier féminin",
-            "FORTRESSES":       "Architecture défensive",
-            "THATCHED COVER_1": "Toiture traditionnelle",
-            "WOOD":             "Matériaux de construction",
-            "DRIED_VEGETABLES": "Ressources alimentaires"
+            "LADDER_2":         "Passage entre deux mondes",
+            "ALTARS":           "Temple des ancêtres · Spiritualité",
+            "ATTIC_1":          "Souveraineté masculine · Grenier",
+            "ATTIC_2":          "Souveraineté féminine · Grenier",
+            "FORTRESSES":       "Argile & paille · Architecture défensive",
+            "THATCHED COVER_1": "Graminées sauvages · Toiture amovible",
+            "WOOD":             "Bois rituels · Présence des ancêtres",
+            "DRIED_VEGETABLES": "Savoir-faire ancestral · Conservation"
         };
 
         const SPATIAL_MAP = {
@@ -1761,6 +1795,11 @@
         // Stocke le tween de rotation pour pouvoir l'annuler au closeInfo
         let orbitTween = null;
 
+        // Interrompt la rotation orbitale dès que l'utilisateur touche la caméra
+        function _onUserInteract() {
+            if (orbitTween) { orbitTween.kill(); orbitTween = null; }
+        }
+
         function showInfo(partName, point, labelPos) {
             const data = PART_DESCRIPTIONS[partName];
             if (!data) return;
@@ -1770,7 +1809,10 @@
             document.getElementById('info-card').classList.add('active');
             document.getElementById('ui-bottom').classList.add('fade');
 
-            if (landscapeControls) landscapeControls.autoRotate = false;
+            if (landscapeControls) {
+                landscapeControls.autoRotate = false;
+                landscapeControls.enabled = false; // bloque le conflit GSAP ↔ contrôles
+            }
             if (orbitTween) { orbitTween.kill(); orbitTween = null; }
 
             // Direction caméra → point
@@ -1802,13 +1844,16 @@
                 ease: "power3.inOut",
                 onUpdate: () => landscapeControls.update(),
                 onComplete: () => {
-                    // Phase 3 : légère rotation orbitale autour du point (arc de ~35°)
-                    // On calcule la distance et l'angle de départ en coordonnées polaires
+                    // Réactive les contrôles → l'utilisateur peut explorer librement
+                    landscapeControls.enabled = true;
+                    landscapeControls.addEventListener('start', _onUserInteract);
+
+                    // Phase 3 : légère rotation orbitale (interruptible par l'utilisateur)
                     const dx = landscapeCamera.position.x - point.x;
                     const dz = landscapeCamera.position.z - point.z;
                     const radius = Math.sqrt(dx * dx + dz * dz);
                     const startAngle = Math.atan2(dz, dx);
-                    const sweepAngle = THREE.MathUtils.degToRad(35); // amplitude de la rotation
+                    const sweepAngle = THREE.MathUtils.degToRad(35);
                     const camY = landscapeCamera.position.y;
 
                     const proxy = { angle: startAngle };
@@ -1816,8 +1861,8 @@
                         angle: startAngle + sweepAngle,
                         duration: 3.5,
                         ease: "power1.inOut",
-                        yoyo: true,       // revient au point de départ
-                        repeat: 1,        // aller-retour une fois
+                        yoyo: true,
+                        repeat: 1,
                         onUpdate: () => {
                             landscapeCamera.position.x = point.x + radius * Math.cos(proxy.angle);
                             landscapeCamera.position.z = point.z + radius * Math.sin(proxy.angle);
@@ -1838,8 +1883,9 @@
             document.getElementById('info-card').classList.remove('active');
             document.getElementById('ui-bottom').classList.remove('fade');
 
-            // Stoppe la rotation orbitale si elle est en cours
+            // Stoppe la rotation orbitale et retire le listener d'interruption
             if (orbitTween) { orbitTween.kill(); orbitTween = null; }
+            if (landscapeControls) landscapeControls.removeEventListener('start', _onUserInteract);
 
             // Retour large — pivot d'abord, puis recul caméra
             gsap.to(landscapeControls.target, {
@@ -1860,6 +1906,96 @@
 
         // Liaison via addEventListener (pas d'onclick inline)
         document.getElementById('close-info-btn').addEventListener('click', closeInfo);
+
+        /* =====================================================
+           ANIMATION RETOUR À L'ESPACE
+           Phase 1 : décollage rapide du paysage (blur + zoom out)
+           Phase 2 : flash de transition doré → noir
+           Phase 3 : globe apparaît au ras de la surface du Togo
+           Phase 4 : recul cinématique vers l'espace
+           ===================================================== */
+        async function returnToSpace() {
+            if (isTransitioning) return;
+            isTransitioning = true;
+
+            // Tue tout tween GSAP actif sur les caméras
+            gsap.killTweensOf(camera.position);
+            if (landscapeCamera) gsap.killTweensOf(landscapeCamera.position);
+
+            // Masquer UI et annotations immédiatement
+            const uiTop    = document.getElementById('ui-top');
+            const uiBottom = document.getElementById('ui-bottom');
+            uiTop.classList.add('fade');
+            uiBottom.classList.add('fade');
+            const explBtn = document.getElementById('explore-btn');
+            explBtn.classList.remove('shown', 'active');
+            document.querySelector('.explore-text').textContent = 'Découvrir';
+            annotationsVisible = false;
+            hideAnnotations();
+            document.getElementById('info-card').classList.remove('active');
+            if (orbitTween) { orbitTween.kill(); orbitTween = null; }
+            if (landscapeControls) landscapeControls.autoRotate = false;
+
+            const lc      = document.getElementById('landscape-container');
+            const canvas  = renderer.domElement;
+
+            // ── Phase 1 : décollage (0.85s) ─────────────────────────────
+            // Caméra s'éloigne vers le ciel + blur croissant (vitesse de vaisseau)
+            const blurProxy = { v: 0 };
+            const tl = gsap.timeline();
+            tl.to(landscapeCamera.position,
+                { x: 0, y: 1400, z: 0, duration: 0.85, ease: 'power3.in',
+                  onUpdate: () => landscapeCamera.lookAt(0, 0, 0) }, 0);
+            tl.to(blurProxy,
+                { v: 16, duration: 0.85, ease: 'power3.in',
+                  onUpdate: () => {
+                    if (landscapeRenderer)
+                        landscapeRenderer.domElement.style.filter = `blur(${blurProxy.v}px)`;
+                  } }, 0);
+            await new Promise(r => tl.eventCallback('onComplete', r));
+
+            // Nettoie le blur du paysage
+            if (landscapeRenderer) landscapeRenderer.domElement.style.filter = '';
+
+            // ── Bascule vers le globe ────────────────────────────────────
+            step = 0;
+            document.getElementById('title').innerText    = locations[0].name;
+            document.getElementById('subtitle').innerText = STEP_SUBTITLES[0];
+            if (atmosphere) atmosphere.visible = true;
+
+            // Caméra globe juste au-dessus du Togo (ras de la surface)
+            const surfacePos = latLonToVector3(10.1, 0.82, 107);
+            camera.position.copy(surfacePos);
+            camera.lookAt(0, 0, 0);
+
+            lc.style.opacity  = '0';
+            lc.style.display  = 'none';
+            canvas.style.transition = 'none';
+            canvas.style.opacity    = '1';
+
+            // ── Recul cinématique vers l'espace (2.6s) ───────────────────
+            await new Promise(r => setTimeout(r, 40));
+
+            const finalPos = latLonToVector3(locations[0].lat, locations[0].lon, locations[0].distance);
+            await new Promise(resolve => {
+                gsap.to(camera.position, {
+                    x: finalPos.x, y: finalPos.y, z: finalPos.z,
+                    duration: 2.6, ease: 'power2.out',
+                    onUpdate: () => { camera.lookAt(0, 0, 0); if (controls) controls.update(); },
+                    onComplete: resolve
+                });
+            });
+
+            // ── Restauration ────────────────────────────────────────────
+            isTransitioning = false;
+            uiTop.classList.remove('fade');
+            uiBottom.classList.remove('fade');
+            document.getElementById('next-btn').style.display   = 'inline-block';
+            document.getElementById('next-btn').innerText        = 'Explorer le Togo';
+            document.getElementById('ar-btn').style.display      = 'none';
+            document.getElementById('back-btn').style.display    = 'none';
+            document.getElementById('ar-unsupported').style.display = 'none';
+        }
 
         function animate() {
             requestAnimationFrame(animate);
